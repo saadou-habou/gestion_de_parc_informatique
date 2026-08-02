@@ -1,0 +1,39 @@
+{% load static %}
+<aside class="pi-sidebar">
+    <div class="pi-brand">
+        <div class="pi-brand-badge">PI</div>
+        <span>Parc Informatique</span>
+    </div>
+
+    <nav class="pi-nav">
+        <div class="pi-nav-section-label">Général</div>
+        <a href="{% url 'parc_informatique:dashboard' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-gauge-high"></i> Tableau de bord
+        </a>
+
+        <div class="pi-nav-section-label">Parc</div>
+        <a href="{% url 'parc_informatique:index' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+            <i class="fa-solid fa-display"></i> Appareils
+        </a>
+        <a href="{% url 'parc_informatique:ajouter_appareil' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'ajouter_appareil' %}active{% endif %}">
+            <i class="fa-solid fa-circle-plus"></i> Ajouter un appareil
+        </a>
+
+        <div class="pi-nav-section-label">Support</div>
+        <span class="pi-nav-link" style="opacity:.5; cursor:not-allowed;" title="Bientôt disponible">
+            <i class="fa-solid fa-screwdriver-wrench"></i> Maintenances
+        </span>
+        <a href="{% url 'parc_informatique:liste_utilisateurs' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'liste_utilisateurs' or request.resolver_match.url_name == 'profil_utilisateur' %}active{% endif %}">
+            <i class="fa-solid fa-users"></i> Utilisateurs
+        </a>
+    </nav>
+
+    <div class="pi-sidebar-footer">
+        <i class="fa-regular fa-circle-question"></i> Aide &amp; support
+        <div class="mt-1" style="opacity:.7;">v1.0 — Gestion IT</div>
+    </div>
+</aside>

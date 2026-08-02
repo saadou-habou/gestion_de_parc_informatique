@@ -1,23 +1,56 @@
-{% include "parc_informatique/include/begin_page.html" %}
+{% extends "parc_informatique/base.html" %}
 
-<h1>Historique de maintenance pour {{ appareil.nom }}</h1>
+{% block title %}Historique de maintenance — {{ appareil.nom }}{% endblock %}
 
-<p><a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}">&laquo; Revenir à l'appareil</a></p>
+{% block page_header %}
+<div class="pi-breadcrumb">
+    <a href="{% url 'parc_informatique:index' %}">Appareils</a> /
+    <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}">{{ appareil.nom }}</a> / Historique
+</div>
+<div class="pi-page-header">
+    <div>
+        <h1>Historique de maintenance</h1>
+        <p>{{ appareil.nom }} — {{ historiquemaintenances|length }} intervention{{ historiquemaintenances|length|pluralize }}</p>
+    </div>
+    <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}" class="btn btn-light d-flex align-items-center gap-2">
+        <i class="fa-solid fa-arrow-left"></i> Retour à l'appareil
+    </a>
+</div>
+{% endblock %}
 
-{% if appareil.maintenances.exists %}
-    <ul>
-        {% for maintenance in appareil.maintenances.all %}
-        <li>
-            <strong>Date d'intervention :</strong> {{ maintenance.date_intervention }} | 
-            <strong>Statut :</strong> {{ maintenance.statut }} | 
-            <strong>Technicien :</strong> {{ maintenance.technicien }} | 
-            <strong>Description :</strong> {{ maintenance.description }}
-        </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>Aucune maintenance enregistrée pour cet appareil.</p>
-{% endif %}
-
-
-{% include "parc_informatique/include/end_page.html" %}
+{% block content %}
+<div class="pi-card">
+    <div class="pi-card-body">
+        {% if historiquemaintenances %}
+        <div class="pi-timeline">
+            {% for maintenance in historiquemaintenances %}
+            <div class="pi-timeline-item">
+                <span class="pi-timeline-dot" style="background: {% if maintenance.statut == 'Réparé' %}var(--pi-success){% else %}var(--pi-danger){% endif %};">
+                    <i class="fa-solid {% if maintenance.statut == 'Réparé' %}fa-check{% else %}fa-xmark{% endif %}"></i>
+                </span>
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="fw-semibold">{{ maintenance.date_intervention }}</div>
+                        <div class="text-muted" style="font-size:.87rem;">{{ maintenance.description }}</div>
+                        <div class="text-muted" style="font-size:.78rem;">Technicien : {{ maintenance.technicien }}</div>
+                    </div>
+                    <div>
+                        {% if maintenance.statut == "Réparé" %}
+                            <span class="pi-badge pi-badge-success">Réparé</span>
+                        {% else %}
+                            <span class="pi-badge pi-badge-danger">Non réparé</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="pi-empty">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Aucune maintenance enregistrée pour cet appareil.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,10 +1,30 @@
-{% include 'parc_informatique/include/begin_page.html' %}
+{% extends "parc_informatique/base.html" %}
 
-    <h1>Gestion de parc informatique</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="Ajouter">
-    </form>
+{% block title %}Ajouter un appareil — Parc Informatique{% endblock %}
 
-{% include 'parc_informatique/include/end_page.html' %}
+{% block page_header %}
+<div class="pi-breadcrumb"><a href="{% url 'parc_informatique:index' %}">Appareils</a> / Ajouter</div>
+<div class="pi-page-header">
+    <div>
+        <h1>Ajouter un appareil</h1>
+        <p>Renseignez les informations du nouvel équipement.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card" style="max-width: 720px;">
+    <div class="pi-card-body">
+        <form method="post" class="pi-form" data-pi-loading novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-pi-primary d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-check"></i> Ajouter l'appareil
+                </button>
+                <a href="{% url 'parc_informatique:index' %}" class="btn btn-light">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

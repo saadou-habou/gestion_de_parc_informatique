@@ -1,0 +1,105 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}{{ utilisateur.nom }} {{ utilisateur.prenom }} — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-breadcrumb">
+    <a href="{% url 'parc_informatique:liste_utilisateurs' %}">Utilisateurs</a> / {{ utilisateur.nom }} {{ utilisateur.prenom }}
+</div>
+<div class="pi-page-header">
+    <div class="d-flex align-items-center gap-3">
+        <div class="pi-avatar" style="width:52px;height:52px;font-size:1.1rem;">
+            {{ utilisateur.nom|slice:":1" }}{{ utilisateur.prenom|slice:":1" }}
+        </div>
+        <div>
+            <h1 class="mb-0">{{ utilisateur.nom }} {{ utilisateur.prenom }}</h1>
+            <p>{{ utilisateur.poste|default:"Poste non renseigné" }}</p>
+        </div>
+    </div>
+    <a href="{% url 'parc_informatique:liste_utilisateurs' %}" class="btn btn-light d-flex align-items-center gap-2">
+        <i class="fa-solid fa-arrow-left"></i> Retour à la liste
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="pi-card">
+            <div class="pi-card-header"><h5>Coordonnées</h5></div>
+            <div class="pi-card-body d-flex flex-column gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-regular fa-envelope text-muted"></i>
+                    <span>{{ utilisateur.email }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-phone text-muted"></i>
+                    <span>{{ utilisateur.telephone|default:"Non renseigné" }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-briefcase text-muted"></i>
+                    <span>{{ utilisateur.poste|default:"Non renseigné" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="pi-card">
+            <div class="pi-card-header">
+                <h5>Appareils affectés</h5>
+                <span class="pi-badge pi-badge-info">{{ appareils_affectes|length }} appareil{{ appareils_affectes|length|pluralize }}</span>
+            </div>
+            <div class="pi-card-body p-0">
+                {% if appareils_affectes %}
+                <div class="pi-table-wrap">
+                    <table class="pi-table mb-0">
+                        <thead>
+                            <tr><th>Appareil</th><th>Type</th><th>N° de série</th><th>État</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for appareil in appareils_affectes %}
+                            <tr>
+                                <td class="fw-semibold">{{ appareil.nom }}</td>
+                                <td>{{ appareil.type }}</td>
+                                <td><code>{{ appareil.numero_serie }}</code></td>
+                                <td>
+                                    {% if appareil.etat == "Disponible" %}
+                                        <span class="pi-badge pi-badge-success">Disponible</span>
+                                    {% elif appareil.etat == "En réparation" %}
+                                        <span class="pi-badge pi-badge-warning">En réparation</span>
+                                    {% else %}
+                                        <span class="pi-badge pi-badge-neutral">Obsolète</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}" class="pi-btn-icon">
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="pi-empty">
+                    <i class="fa-solid fa-box-open"></i>
+                    Aucun appareil n'est actuellement affecté à cet utilisateur.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="alert alert-light border mt-3 mb-0 d-flex align-items-start gap-2" style="font-size:.85rem;">
+            <i class="fa-solid fa-circle-info text-muted mt-1"></i>
+            <div>
+                Cette vue affiche les affectations <strong>actuelles</strong>. Le modèle de données ne
+                conserve pas encore d'historique des affectations passées (seule l'affectation en cours
+                est stockée sur chaque appareil) — un modèle dédié pourrait être ajouté si un historique
+                complet des affectations est nécessaire.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

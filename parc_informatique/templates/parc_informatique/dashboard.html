@@ -1,0 +1,187 @@
+{% extends "parc_informatique/base.html" %}
+{% load static %}
+
+{% block title %}Tableau de bord — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-page-header">
+    <div>
+        <h1>Tableau de bord</h1>
+        <p>Vue d'ensemble de l'état du parc informatique</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Cartes statistiques -->
+<div class="row row-cols-2 row-cols-lg-5 g-3 mb-4">
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-info-bg); color:var(--pi-info);">
+                <i class="fa-solid fa-server"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ total_appareils }}</div>
+                <div class="pi-stat-label">Appareils au total</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-success-bg); color:var(--pi-success);">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ appareils_disponibles }}</div>
+                <div class="pi-stat-label">Disponibles</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-primary-light); color:var(--pi-primary);">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ appareils_affectes }}</div>
+                <div class="pi-stat-label">Affectés à un utilisateur</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-warning-bg); color:var(--pi-warning);">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ appareils_maintenance }}</div>
+                <div class="pi-stat-label">En réparation</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:#f3e8ff; color:#9333ea;">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ utilisateurs_actifs }}</div>
+                <div class="pi-stat-label">Utilisateurs actifs</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Répartition des états -->
+    <div class="col-lg-5">
+        <div class="pi-card h-100">
+            <div class="pi-card-header">
+                <h5>Répartition par état</h5>
+            </div>
+            <div class="pi-card-body">
+                <canvas id="pi-etat-chart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertes -->
+    <div class="col-lg-7">
+        <div class="pi-card h-100">
+            <div class="pi-card-header">
+                <h5>Alertes importantes</h5>
+                <span class="pi-badge pi-badge-danger">{{ appareils_en_alerte|length }} à traiter</span>
+            </div>
+            <div class="pi-card-body p-0">
+                {% if appareils_en_alerte %}
+                <div class="pi-table-wrap">
+                    <table class="pi-table mb-0">
+                        <thead>
+                            <tr><th>Appareil</th><th>Type</th><th>Statut</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for a in appareils_en_alerte %}
+                            <tr>
+                                <td class="fw-semibold">{{ a.nom }}</td>
+                                <td>{{ a.type }}</td>
+                                <td><span class="pi-badge pi-badge-warning">{{ a.etat }}</span></td>
+                                <td class="text-end">
+                                    <a href="{% url 'parc_informatique:afficher_appareil' a.id %}" class="pi-btn-icon">
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="pi-empty">
+                    <i class="fa-regular fa-face-smile"></i>
+                    Aucune alerte pour le moment. Le parc est en bon état !
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activité récente -->
+<div class="pi-card mt-3">
+    <div class="pi-card-header">
+        <h5>Dernières activités de maintenance</h5>
+    </div>
+    <div class="pi-card-body">
+        {% if dernieres_activites %}
+        <div class="pi-timeline">
+            {% for m in dernieres_activites %}
+            <div class="pi-timeline-item">
+                <span class="pi-timeline-dot" style="background: {% if m.statut == 'Réparé' %}var(--pi-success){% else %}var(--pi-danger){% endif %};">
+                    <i class="fa-solid {% if m.statut == 'Réparé' %}fa-check{% else %}fa-xmark{% endif %}"></i>
+                </span>
+                <div class="d-flex justify-content-between flex-wrap">
+                    <div>
+                        <strong>{{ m.appareil.nom }}</strong> — {{ m.description|truncatechars:70 }}
+                        <div class="text-muted" style="font-size:.78rem;">Technicien : {{ m.technicien }}</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="pi-badge {% if m.statut == 'Réparé' %}pi-badge-success{% else %}pi-badge-danger{% endif %}">{{ m.statut }}</span>
+                        <div class="text-muted" style="font-size:.78rem;">{{ m.date_intervention }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="pi-empty">
+            <i class="fa-regular fa-clock"></i>
+            Aucune activité récente.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    const ctx = document.getElementById('pi-etat-chart');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Disponible', 'En réparation', 'Obsolète'],
+            datasets: [{
+                data: [{{ appareils_disponibles }}, {{ appareils_maintenance }}, {{ appareils_obsoletes }}],
+                backgroundColor: ['#16a34a', '#d97706', '#6b7280'],
+                borderWidth: 0,
+            }]
+        },
+        options: {
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 12 } } } },
+            cutout: '68%',
+        }
+    });
+</script>
+{% endblock %}

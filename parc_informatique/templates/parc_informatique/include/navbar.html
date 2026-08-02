@@ -1,0 +1,40 @@
+<header class="pi-topbar">
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-sm d-lg-none border-0" data-pi-sidebar-toggle aria-label="Ouvrir le menu">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="pi-search d-none d-md-block">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" class="form-control" placeholder="Rechercher un appareil, un utilisateur…">
+        </div>
+    </div>
+
+    <div class="pi-topbar-actions">
+        <a href="{% url 'parc_informatique:ajouter_appareil' %}" class="btn btn-pi-primary btn-sm d-none d-sm-inline-flex align-items-center gap-2">
+            <i class="fa-solid fa-plus"></i> Nouvel appareil
+        </a>
+
+        <button class="pi-icon-btn" title="Notifications">
+            <i class="fa-regular fa-bell"></i>
+            <span class="pi-dot"></span>
+        </button>
+
+        <div class="dropdown">
+            <a href="#" class="pi-user-chip dropdown-toggle" style="text-decoration:none;" data-bs-toggle="dropdown">
+                <div class="pi-avatar">
+                    {% if request.user.is_authenticated %}{{ request.user.username|slice:":2"|upper }}{% else %}IT{% endif %}
+                </div>
+                <span class="d-none d-md-inline fw-semibold" style="font-size:.85rem;">
+                    {% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.username }}{% else %}Administrateur{% endif %}
+                </span>
+                <i class="fa-solid fa-chevron-down d-none d-md-inline" style="font-size:.7rem; color:var(--pi-text-muted);"></i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li><a class="dropdown-item" href="#"><i class="fa-regular fa-user me-2"></i>Mon profil</a></li>
+                <li><a class="dropdown-item" href="#"><i class="fa-solid fa-gear me-2"></i>Paramètres</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="#"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Déconnexion</a></li>
+            </ul>
+        </div>
+    </div>
+</header>

@@ -1,29 +1,105 @@
-{% include 'parc_informatique/include/begin_page.html' %}
+{% extends "parc_informatique/base.html" %}
 
-<h1>Bienvenue sur l'application de gestion de parc informatique</h1>
-<p><a href="{% url 'parc_informatique:ajouter_appareil' %}">➕ Ajouter un appareil</a></p>
-<table border="1" style="width: 100%;">
-    <tr>
-        <th>Nom</th>
-        <th>Type</th>
-        <th>Marque</th>
-        <th>Modèle</th>
-        <th>Numéro de série</th>
-        <th>Etat</th>
-        <th colspan="2">Actions</th>
-    </tr>
-    <p>{{ utilisateur.nom }}</p>
-    {% for appareil in appareils %}
-    <tr>
-        <td><a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}">{{ appareil.nom }}</a></td>
-        <td>{{ appareil.type }}</td>
-        <td>{{ appareil.marque }}</td>
-        <td>{{ appareil.modele }}</td>
-        <td>{{ appareil.numero_serie }}</td>
-        <td>{{ appareil.etat }}</td>
-        <td><a href="{% url 'parc_informatique:modifier_appareil' appareil.id %}">✏️</a></td>
-        <td><a href="{% url 'parc_informatique:supprimer_appareil' appareil.id %}">❌</a></td>
-    </tr>
-    {% endfor %}
-</table>
-{% include 'parc_informatique/include/begin_page.html' %}
+{% block title %}Appareils — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-page-header">
+    <div>
+        <h1>Appareils</h1>
+        <p>{{ total_appareils }} appareil{{ total_appareils|pluralize }} enregistré{{ total_appareils|pluralize }}</p>
+    </div>
+    <a href="{% url 'parc_informatique:ajouter_appareil' %}" class="btn btn-pi-primary d-flex align-items-center gap-2">
+        <i class="fa-solid fa-plus"></i> Ajouter un appareil
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card">
+    <div class="pi-card-header flex-wrap gap-2">
+        <div class="pi-search" style="max-width: 320px;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" class="form-control" placeholder="Rechercher un appareil…"
+                   data-pi-search-input="#pi-appareils-table">
+        </div>
+        <div class="btn-group btn-group-sm" data-pi-filter="#pi-appareils-table" role="group">
+            <button type="button" class="btn btn-outline-secondary active" data-pi-filter-value="all">Tous</button>
+            <button type="button" class="btn btn-outline-secondary" data-pi-filter-value="Disponible">Disponibles</button>
+            <button type="button" class="btn btn-outline-secondary" data-pi-filter-value="En réparation">En réparation</button>
+            <button type="button" class="btn btn-outline-secondary" data-pi-filter-value="Obsolète">Obsolètes</button>
+        </div>
+    </div>
+
+    <div class="pi-table-wrap">
+        <table class="pi-table mb-0" id="pi-appareils-table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>Marque</th>
+                    <th>Modèle</th>
+                    <th>N° de série</th>
+                    <th>État</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appareil in appareils %}
+                <tr data-status="{{ appareil.etat }}">
+                    <td>
+                        <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}" class="fw-semibold text-decoration-none">
+                            {{ appareil.nom }}
+                        </a>
+                    </td>
+                    <td>{{ appareil.type }}</td>
+                    <td>{{ appareil.marque|default:"—" }}</td>
+                    <td>{{ appareil.modele|default:"—" }}</td>
+                    <td><code>{{ appareil.numero_serie }}</code></td>
+                    <td>
+                        {% if appareil.etat == "Disponible" %}
+                            <span class="pi-badge pi-badge-success">Disponible</span>
+                        {% elif appareil.etat == "En réparation" %}
+                            <span class="pi-badge pi-badge-warning">En réparation</span>
+                        {% else %}
+                            <span class="pi-badge pi-badge-neutral">Obsolète</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="pi-row-actions">
+                            <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}" class="pi-btn-icon" title="Voir">
+                                <i class="fa-regular fa-eye"></i>
+                            </a>
+                            <a href="{% url 'parc_informatique:modifier_appareil' appareil.id %}" class="pi-btn-icon" title="Modifier">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <a href="{% url 'parc_informatique:supprimer_appareil' appareil.id %}" class="pi-btn-icon danger" title="Supprimer">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="pi-empty">
+                            <i class="fa-solid fa-box-open"></i>
+                            Aucun appareil enregistré pour le moment.
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr class="pi-table-empty-row" style="display:none;">
+                    <td colspan="7">
+                        <div class="pi-empty">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Aucun résultat pour cette recherche.
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% include "parc_informatique/include/pagination.html" %}
+</div>
+{% endblock %}

@@ -1,25 +1,82 @@
-{% include "parc_informatique/include/begin_page.html" %}
+{% extends "parc_informatique/base.html" %}
 
-<h1>{{ appareil.nom }}</h1>
+{% block title %}{{ appareil.nom }} — Parc Informatique{% endblock %}
 
-<p><strong>Nom :</strong> {{ appareil.nom }}</p>
-<p><strong>Type :</strong> {{ appareil.type }}</p>
-<p><strong>Marque :</strong> {{ appareil.marque }}</p>
-<p><strong>Modèle :</strong> {{ appareil.modele }}</p>
-<p><strong>Numéro de série :</strong> {{ appareil.numero_serie }}</p>
-<p><strong>État :</strong> {{ appareil.etat }}</p>
-<p><strong>Date d'acquisition :</strong> {{ appareil.date_acquisition }}</p>
+{% block page_header %}
+<div class="pi-breadcrumb">
+    <a href="{% url 'parc_informatique:index' %}">Appareils</a> / {{ appareil.nom }}
+</div>
+<div class="pi-page-header">
+    <div>
+        <h1>{{ appareil.nom }}</h1>
+        <p>{{ appareil.marque }} {{ appareil.modele }} · N° {{ appareil.numero_serie }}</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'parc_informatique:modifier_appareil' appareil.id %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-pen"></i> Modifier
+        </a>
+        <a href="{% url 'parc_informatique:envoyer_en_maintenance' appareil.id %}" class="btn btn-pi-primary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-screwdriver-wrench"></i> Envoyer en maintenance
+        </a>
+    </div>
+</div>
+{% endblock %}
 
-<!-- Section Localisation -->
-<p><strong>Localisation :</strong></p>
-<ul>
-    <li><strong>Nom :</strong> {{ appareil.localisation.nom }}</li>
-    <li><strong>Étage :</strong> {{ appareil.localisation.etage }}</li>
-    <li><strong>Bâtiment :</strong> {{ appareil.localisation.batiment }}</li>
-</ul>
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="pi-card">
+            <div class="pi-card-header">
+                <h5>Informations générales</h5>
+                {% if appareil.etat == "Disponible" %}
+                    <span class="pi-badge pi-badge-success">Disponible</span>
+                {% elif appareil.etat == "En réparation" %}
+                    <span class="pi-badge pi-badge-warning">En réparation</span>
+                {% else %}
+                    <span class="pi-badge pi-badge-neutral">Obsolète</span>
+                {% endif %}
+            </div>
+            <div class="pi-card-body">
+                <div class="row row-cols-1 row-cols-sm-2 g-3">
+                    <div><div class="text-muted" style="font-size:.78rem;">Type</div><div class="fw-semibold">{{ appareil.type }}</div></div>
+                    <div><div class="text-muted" style="font-size:.78rem;">Marque</div><div class="fw-semibold">{{ appareil.marque|default:"—" }}</div></div>
+                    <div><div class="text-muted" style="font-size:.78rem;">Modèle</div><div class="fw-semibold">{{ appareil.modele|default:"—" }}</div></div>
+                    <div><div class="text-muted" style="font-size:.78rem;">Numéro de série</div><div class="fw-semibold"><code>{{ appareil.numero_serie }}</code></div></div>
+                    <div><div class="text-muted" style="font-size:.78rem;">Date d'acquisition</div><div class="fw-semibold">{{ appareil.date_acquisition|default:"—" }}</div></div>
+                    <div><div class="text-muted" style="font-size:.78rem;">Utilisateur affecté</div><div class="fw-semibold">{{ appareil.utilisateur|default:"Non affecté" }}</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<p><a href="{% url 'parc_informatique:envoyer_en_maintenance' appareil.id %}">⚙️ Envoyer en maintenance</a></p>
-<p><a href="{% url 'parc_informatique:historique_maintenance' appareil.id %}">⚙️ Afficher l'historique de maintenance</a></p>
-<p><a href="{% url 'parc_informatique:index' %}">&laquo; Revenir à la liste des appareils</a></p>
+    <div class="col-lg-4">
+        <div class="pi-card mb-3">
+            <div class="pi-card-header"><h5>Localisation</h5></div>
+            <div class="pi-card-body">
+                {% if appareil.localisation %}
+                <div class="d-flex align-items-start gap-2">
+                    <i class="fa-solid fa-location-dot text-muted mt-1"></i>
+                    <div>
+                        <div class="fw-semibold">{{ appareil.localisation.nom }}</div>
+                        <div class="text-muted" style="font-size:.85rem;">Étage {{ appareil.localisation.etage }} · Bâtiment {{ appareil.localisation.batiment }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <span class="text-muted">Aucune localisation renseignée.</span>
+                {% endif %}
+            </div>
+        </div>
 
-{% include "parc_informatique/include/end_page.html" %}
+        <div class="pi-card">
+            <div class="pi-card-body d-grid gap-2">
+                <a href="{% url 'parc_informatique:historique_maintenance' appareil.id %}" class="btn btn-outline-secondary d-flex align-items-center gap-2 justify-content-center">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Historique de maintenance
+                </a>
+                <a href="{% url 'parc_informatique:index' %}" class="btn btn-light d-flex align-items-center gap-2 justify-content-center">
+                    <i class="fa-solid fa-arrow-left"></i> Retour à la liste
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

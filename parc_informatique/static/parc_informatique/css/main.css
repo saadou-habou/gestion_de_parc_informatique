@@ -1,190 +1,366 @@
-/* === Global Styles === */
+/* =========================================================
+   PARC INFORMATIQUE — Design System
+   Palette : Indigo profond + Slate (inspiration ITSM / SaaS)
+   Typo    : Sora (titres) + Inter (texte courant)
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Couleurs de marque */
+  --pi-primary: #4f46e5;
+  --pi-primary-dark: #3730a3;
+  --pi-primary-light: #eef2ff;
+  --pi-accent: #06b6d4;
+
+  /* Neutres */
+  --pi-bg: #f6f7fb;
+  --pi-surface: #ffffff;
+  --pi-border: #e5e7eb;
+  --pi-text: #1e2433;
+  --pi-text-muted: #6b7280;
+
+  /* États */
+  --pi-success: #16a34a;
+  --pi-success-bg: #ecfdf3;
+  --pi-warning: #d97706;
+  --pi-warning-bg: #fffbeb;
+  --pi-danger: #dc2626;
+  --pi-danger-bg: #fef2f2;
+  --pi-info: #2563eb;
+  --pi-info-bg: #eff6ff;
+
+  /* Structure */
+  --pi-sidebar-w: 260px;
+  --pi-navbar-h: 68px;
+  --pi-radius: 12px;
+  --pi-radius-sm: 8px;
+  --pi-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --pi-shadow-md: 0 4px 14px rgba(16, 24, 40, 0.08);
+  --pi-transition: all .18s ease;
+}
+
+* { box-sizing: border-box; }
+
 body {
-    font-family: 'Arial', sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f7fc; /* Fond clair */
-    color: #333;
-    line-height: 1.6;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--pi-bg);
+  color: var(--pi-text);
+  font-size: 14.5px;
 }
 
-/* === Headers === */
-h1, h2, h3 {
-    color: #27ae60;
-    text-align: center;
-    margin: 20px 0;
+h1, h2, h3, h4, h5, .pi-brand {
+  font-family: 'Sora', 'Inter', sans-serif;
+  font-weight: 700;
+  color: #131826;
+  letter-spacing: -0.01em;
 }
 
-/* === Links === */
-a {
-    color: #27ae60;
-    text-decoration: none;
-    transition: color 0.3s ease;
+a { text-decoration: none; }
+
+/* ---------- Layout shell ---------- */
+.pi-shell { display: flex; min-height: 100vh; }
+
+.pi-sidebar {
+  width: var(--pi-sidebar-w);
+  flex-shrink: 0;
+  background: #14162b;
+  color: #cbd0e6;
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 1030;
+  transition: transform .2s ease;
 }
 
-a:hover {
-    color: #1e874a;
-    text-decoration: underline;
+.pi-sidebar .pi-brand {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: 1.25rem 1.25rem;
+  font-size: 1.05rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
 }
 
-/* === Buttons === */
-button,
-input[type="submit"],
-button[type="button"] {
-    background-color: #27ae60; /* Couleur dominante */
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    font-size: 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    display: inline-block;
-    margin: 5px 0;
-    text-align: center;
+.pi-brand-badge {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--pi-primary), var(--pi-accent));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; color: #fff; font-size: .95rem;
 }
 
-button:hover,
-input[type="submit"]:hover {
-    background-color: #1e874a; /* Couleur légèrement plus sombre au survol */
-    transform: scale(1.05);
+.pi-nav { padding: 1rem .75rem; flex: 1; overflow-y: auto; }
+.pi-nav-section-label {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .08em;
+  color: #6b7196; padding: 1rem .75rem .4rem;
+  font-weight: 600;
 }
 
-button:active,
-input[type="submit"]:active {
-    background-color: #166736; /* Couleur plus sombre lors du clic */
-    transform: scale(0.95);
+.pi-nav-link {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .62rem .8rem;
+  border-radius: var(--pi-radius-sm);
+  color: #b7bcd8;
+  font-weight: 500;
+  font-size: .89rem;
+  margin-bottom: .15rem;
+  transition: var(--pi-transition);
+}
+.pi-nav-link i { width: 18px; text-align: center; font-size: .95rem; }
+.pi-nav-link:hover { background: rgba(255,255,255,.06); color: #fff; }
+.pi-nav-link.active {
+  background: linear-gradient(135deg, var(--pi-primary), #6f5ef0);
+  color: #fff;
+  box-shadow: var(--pi-shadow-sm);
 }
 
-button[disabled],
-input[type="submit"][disabled] {
-    background-color: #95a5a6; /* Gris pour un état désactivé */
-    cursor: not-allowed;
+.pi-sidebar-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,.08);
+  font-size: .78rem;
+  color: #6b7196;
 }
 
-/* === Special Buttons (Link-Like) === */
-button.link-button {
-    background-color: transparent;
-    color: #27ae60;
-    border: none;
-    padding: 0;
-    text-decoration: underline;
-    cursor: pointer;
+/* ---------- Main column ---------- */
+.pi-main {
+  margin-left: var(--pi-sidebar-w);
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-button.link-button:hover {
-    color: #1e874a;
-    text-decoration: none;
+.pi-topbar {
+  height: var(--pi-navbar-h);
+  background: var(--pi-surface);
+  border-bottom: 1px solid var(--pi-border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.5rem;
+  position: sticky; top: 0; z-index: 1020;
 }
 
-/* === Forms === */
-form {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.pi-topbar .pi-search {
+  max-width: 340px;
+  position: relative;
+}
+.pi-topbar .pi-search input {
+  border-radius: var(--pi-radius-sm);
+  background: var(--pi-bg);
+  border: 1px solid var(--pi-border);
+  padding-left: 2.2rem;
+  font-size: .87rem;
+}
+.pi-topbar .pi-search i {
+  position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
+  color: var(--pi-text-muted); font-size: .85rem;
 }
 
-label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #555;
+.pi-topbar-actions { display: flex; align-items: center; gap: 1rem; }
+
+.pi-icon-btn {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--pi-bg);
+  color: var(--pi-text-muted);
+  position: relative;
+  transition: var(--pi-transition);
+  border: 1px solid transparent;
+}
+.pi-icon-btn:hover { background: var(--pi-primary-light); color: var(--pi-primary); }
+.pi-icon-btn .pi-dot {
+  position: absolute; top: 7px; right: 8px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--pi-danger); border: 2px solid var(--pi-surface);
 }
 
-input[type="text"],
-input[type="date"],
-select,
-textarea {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1rem;
-    background: #f9f9f9;
-    transition: border-color 0.3s ease;
+.pi-user-chip {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .3rem .5rem .3rem .3rem;
+  border-radius: 999px;
+  transition: var(--pi-transition);
+  color: var(--pi-text);
+}
+.pi-user-chip:hover { background: var(--pi-bg); }
+.pi-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--pi-primary), var(--pi-accent));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .8rem;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
-    border-color: #27ae60;
-    box-shadow: 0 0 5px rgba(39, 174, 96, 0.3);
-    outline: none;
+.pi-content { padding: 1.75rem; flex: 1; }
+
+.pi-footer {
+  text-align: center;
+  font-size: .8rem;
+  color: var(--pi-text-muted);
+  padding: 1rem;
+  border-top: 1px solid var(--pi-border);
+  background: var(--pi-surface);
 }
 
-/* === Tables === */
-table {
-    width: 90%;
-    margin: 20px auto;
-    border-collapse: collapse;
-    background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+/* ---------- Page header ---------- */
+.pi-page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 1.5rem; flex-wrap: wrap; gap: .75rem;
+}
+.pi-page-header h1 { font-size: 1.4rem; margin-bottom: .15rem; }
+.pi-page-header p { color: var(--pi-text-muted); margin: 0; font-size: .88rem; }
+.pi-breadcrumb { font-size: .78rem; color: var(--pi-text-muted); margin-bottom: .4rem; }
+.pi-breadcrumb a { color: var(--pi-text-muted); }
+.pi-breadcrumb a:hover { color: var(--pi-primary); }
+
+/* ---------- Cards ---------- */
+.pi-card {
+  background: var(--pi-surface);
+  border: 1px solid var(--pi-border);
+  border-radius: var(--pi-radius);
+  box-shadow: var(--pi-shadow-sm);
+}
+.pi-card-body { padding: 1.25rem 1.4rem; }
+.pi-card-header {
+  padding: 1.1rem 1.4rem;
+  border-bottom: 1px solid var(--pi-border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pi-card-header h5 { margin: 0; font-size: 1rem; }
+
+/* ---------- Stat cards ---------- */
+.pi-stat-card {
+  background: var(--pi-surface);
+  border: 1px solid var(--pi-border);
+  border-radius: var(--pi-radius);
+  padding: 1.25rem 1.4rem;
+  display: flex; align-items: center; gap: 1rem;
+  box-shadow: var(--pi-shadow-sm);
+  transition: var(--pi-transition);
+}
+.pi-stat-card:hover { box-shadow: var(--pi-shadow-md); transform: translateY(-2px); }
+.pi-stat-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem; flex-shrink: 0;
+}
+.pi-stat-value { font-family: 'Sora'; font-size: 1.55rem; font-weight: 700; line-height: 1; }
+.pi-stat-label { color: var(--pi-text-muted); font-size: .82rem; margin-top: .2rem; }
+
+/* ---------- Badges statut ---------- */
+.pi-badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .3rem .65rem;
+  border-radius: 999px;
+  font-size: .76rem; font-weight: 600;
+}
+.pi-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pi-badge-success { background: var(--pi-success-bg); color: var(--pi-success); }
+.pi-badge-warning { background: var(--pi-warning-bg); color: var(--pi-warning); }
+.pi-badge-danger  { background: var(--pi-danger-bg);  color: var(--pi-danger); }
+.pi-badge-info    { background: var(--pi-info-bg);    color: var(--pi-info); }
+.pi-badge-neutral { background: #f1f2f6; color: var(--pi-text-muted); }
+
+/* ---------- Table ---------- */
+.pi-table-wrap { overflow-x: auto; }
+table.pi-table { width: 100%; border-collapse: collapse; }
+table.pi-table thead th {
+  text-align: left; font-size: .74rem; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--pi-text-muted);
+  padding: .75rem 1rem; border-bottom: 1px solid var(--pi-border);
+  background: #fafbff;
+}
+table.pi-table tbody td {
+  padding: .85rem 1rem; border-bottom: 1px solid var(--pi-border);
+  font-size: .87rem; vertical-align: middle;
+}
+table.pi-table tbody tr { transition: var(--pi-transition); }
+table.pi-table tbody tr:hover { background: var(--pi-primary-light); }
+table.pi-table tbody tr:last-child td { border-bottom: none; }
+
+.pi-row-actions { display: flex; gap: .4rem; justify-content: flex-end; }
+.pi-btn-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--pi-bg); color: var(--pi-text-muted);
+  border: 1px solid var(--pi-border);
+  transition: var(--pi-transition);
+}
+.pi-btn-icon:hover { background: var(--pi-primary); color: #fff; border-color: var(--pi-primary); }
+.pi-btn-icon.danger:hover { background: var(--pi-danger); border-color: var(--pi-danger); }
+
+/* ---------- Buttons ---------- */
+.btn-pi-primary {
+  background: linear-gradient(135deg, var(--pi-primary), #6f5ef0);
+  border: none; color: #fff; font-weight: 600;
+  border-radius: var(--pi-radius-sm);
+  padding: .55rem 1.1rem;
+  box-shadow: var(--pi-shadow-sm);
+  transition: var(--pi-transition);
+}
+.btn-pi-primary:hover { transform: translateY(-1px); box-shadow: var(--pi-shadow-md); color: #fff; }
+
+/* ---------- Forms ---------- */
+.pi-form label { font-weight: 600; font-size: .85rem; margin-bottom: .3rem; }
+.pi-form .form-control, .pi-form .form-select {
+  border-radius: var(--pi-radius-sm);
+  border: 1px solid var(--pi-border);
+  padding: .55rem .8rem;
+  font-size: .89rem;
+  transition: var(--pi-transition);
+}
+.pi-form .form-control:focus, .pi-form .form-select:focus {
+  border-color: var(--pi-primary);
+  box-shadow: 0 0 0 3px var(--pi-primary-light);
+}
+.pi-form p { margin-bottom: 1.1rem; }
+
+/* ---------- Timeline (maintenance) ---------- */
+.pi-timeline { position: relative; padding-left: 2rem; }
+.pi-timeline::before {
+  content: ''; position: absolute; left: 9px; top: 6px; bottom: 6px;
+  width: 2px; background: var(--pi-border);
+}
+.pi-timeline-item { position: relative; padding-bottom: 1.5rem; }
+.pi-timeline-item:last-child { padding-bottom: 0; }
+.pi-timeline-dot {
+  position: absolute; left: -2rem; top: 2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .6rem; color: #fff;
 }
 
-th, td {
-    padding: 12px 20px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
+/* ---------- Utilities ---------- */
+.pi-fade-in { animation: piFadeIn .35s ease both; }
+@keyframes piFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.pi-empty {
+  text-align: center; padding: 3rem 1.5rem; color: var(--pi-text-muted);
+}
+.pi-empty i { font-size: 2.2rem; color: var(--pi-border); margin-bottom: .75rem; display: block; }
+
+/* Loader overlay for long actions */
+.pi-loading-overlay {
+  position: fixed; inset: 0; background: rgba(255,255,255,.7);
+  display: none; align-items: center; justify-content: center; z-index: 2000;
+}
+.pi-loading-overlay.active { display: flex; }
+.pi-spinner {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 3px solid var(--pi-primary-light); border-top-color: var(--pi-primary);
+  animation: piSpin .7s linear infinite;
+}
+@keyframes piSpin { to { transform: rotate(360deg); } }
+
+/* Mobile */
+@media (max-width: 991px) {
+  .pi-sidebar { transform: translateX(-100%); }
+  .pi-sidebar.pi-open { transform: translateX(0); }
+  .pi-main { margin-left: 0; }
+  .pi-content { padding: 1.1rem; }
 }
 
-th {
-    background-color: #27ae60;
-    color: #fff;
-    text-transform: uppercase;
-}
-
-tr:hover {
-    background-color: #f1f1f1;
-}
-
-/* === Footer === */
-footer {
-    text-align: center;
-    padding: 10px;
-    margin-top: 20px;
-    font-size: 0.9rem;
-    color: #777;
-}
-
-footer a {
-    color: #27ae60;
-}
-
-footer a:hover {
-    color: #1e874a;
-}
-
-
-p strong {
-    color: #27ae60; /* Vert pour les labels */
-    font-weight: bold;
-}
-
-ul li strong {
-    color: #27ae60; /* Labels verts dans les listes */
-}
-
-.btn {
-    display: inline-block;
-    padding: 10px 15px;
-    margin: 5px;
-    text-decoration: none;
-    border-radius: 5px;
-}
-
-.btn-danger {
-    background-color: red;
-    color: white;
-    border: none;
-}
-
-.btn-secondary {
-    background-color: #27ae60;
-    color: white;
-    border: none;
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
 }
