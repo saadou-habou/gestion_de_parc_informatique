@@ -1,0 +1,14 @@
+[project]
+name = "gestion-de-parc-informatique"
+version = "0.1.0"
+description = "Application Django de gestion de parc informatique"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["django>=5.2,<6.0"]
+
+[dependency-groups]
+dev = ["flake8>=7.3.0", "pytest>=9.1.1", "pytest-django>=4.12.0"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "gestion_parc.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
