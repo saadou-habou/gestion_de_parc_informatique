@@ -1,10 +1,25 @@
-.vscode/
-*.pyc
-*.pyo
-*.pyd
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
 venv/
-*.db
-*.sqlite3
+.venv/
+
+# Django
 *.log
-*.devdbrc
+db.sqlite3
+media/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment variables
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
