@@ -314,7 +314,7 @@ table.pi-table tbody tr:last-child td { border-bottom: none; }
   border-color: var(--pi-primary);
   box-shadow: 0 0 0 3px var(--pi-primary-light);
 }
-.pi-form p { margin-bottom: 1.1rem; }
+.pi-form .form-text { color: var(--pi-text-muted); font-size: .78rem; margin-top: .3rem; }
 
 /* ---------- Timeline (maintenance) ---------- */
 .pi-timeline { position: relative; padding-left: 2rem; }

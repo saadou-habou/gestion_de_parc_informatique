@@ -13,8 +13,14 @@ urlpatterns = [
     path("appareils/<int:appareil_id>/supprimer/", views.supprimer_appareil, name="supprimer_appareil"),
     path("appareils/<int:appareil_id>/maintenance/", views.historique_maintenance, name='historique_maintenance'),
     path("appareils/<int:appareil_id>/evoyer_en_maintenance/", views.envoyer_en_maintenance, name="envoyer_en_maintenance"),
+    path("appareils/<int:appareil_id>/affecter/", views.affecter_appareil, name="affecter_appareil"),
+    path("appareils/<int:appareil_id>/affectations/", views.historique_affectations, name="historique_affectations"),
 
     # Utilisateurs & affectations
     path("utilisateurs/", views.liste_utilisateurs, name="liste_utilisateurs"),
     path("utilisateurs/<int:utilisateur_id>/", views.profil_utilisateur, name="profil_utilisateur"),
+
+    # Maintenances
+    path("maintenances/", views.liste_maintenances, name="liste_maintenances"),
+    path("maintenances/<int:maintenance_id>/terminer/", views.terminer_maintenance, name="terminer_maintenance"),
 ]

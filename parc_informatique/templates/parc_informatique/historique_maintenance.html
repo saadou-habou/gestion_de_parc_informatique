@@ -34,11 +34,19 @@
                         <div class="text-muted" style="font-size:.87rem;">{{ maintenance.description }}</div>
                         <div class="text-muted" style="font-size:.78rem;">Technicien : {{ maintenance.technicien }}</div>
                     </div>
-                    <div>
+                    <div class="d-flex align-items-center gap-2">
                         {% if maintenance.statut == "Réparé" %}
                             <span class="pi-badge pi-badge-success">Réparé</span>
                         {% else %}
                             <span class="pi-badge pi-badge-danger">Non réparé</span>
+                            <form method="post" action="{% url 'parc_informatique:terminer_maintenance' maintenance.id %}" data-pi-loading>
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
+                                        data-pi-confirm="Marquer cette intervention comme réparée ?">
+                                    <i class="fa-solid fa-check"></i> Terminer
+                                </button>
+                            </form>
                         {% endif %}
                     </div>
                 </div>

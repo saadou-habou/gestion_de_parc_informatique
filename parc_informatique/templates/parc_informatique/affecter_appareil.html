@@ -1,0 +1,40 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Affecter {{ appareil.nom }} — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-breadcrumb">
+    <a href="{% url 'parc_informatique:index' %}">Appareils</a> /
+    <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}">{{ appareil.nom }}</a> / Affectation
+</div>
+<div class="pi-page-header">
+    <div>
+        <h1>Changer d'affectation</h1>
+        <p>
+            {{ appareil.nom }} —
+            {% if appareil.utilisateur %}
+                actuellement affecté à <strong>{{ appareil.utilisateur }}</strong>
+            {% else %}
+                actuellement non affecté
+            {% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card" style="max-width: 560px;">
+    <div class="pi-card-body">
+        <form method="post" class="pi-form" data-pi-loading novalidate>
+            {% csrf_token %}
+            {% include "parc_informatique/include/form_fields.html" %}
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-pi-primary d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-user-check"></i> Enregistrer l'affectation
+                </button>
+                <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}" class="btn btn-light">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

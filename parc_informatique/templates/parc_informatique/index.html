@@ -69,6 +69,9 @@
                             <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}" class="pi-btn-icon" title="Voir">
                                 <i class="fa-regular fa-eye"></i>
                             </a>
+                            <a href="{% url 'parc_informatique:affecter_appareil' appareil.id %}" class="pi-btn-icon" title="Affecter">
+                                <i class="fa-solid fa-user-check"></i>
+                            </a>
                             <a href="{% url 'parc_informatique:modifier_appareil' appareil.id %}" class="pi-btn-icon" title="Modifier">
                                 <i class="fa-solid fa-pen"></i>
                             </a>

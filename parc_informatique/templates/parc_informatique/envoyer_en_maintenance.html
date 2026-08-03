@@ -20,7 +20,7 @@
     <div class="pi-card-body">
         <form method="post" class="pi-form" data-pi-loading novalidate>
             {% csrf_token %}
-            {{ form.as_p }}
+            {% include "parc_informatique/include/form_fields.html" %}
             <div class="d-flex gap-2 mt-4">
                 <button type="submit" class="btn btn-pi-primary d-flex align-items-center gap-2">
                     <i class="fa-solid fa-screwdriver-wrench"></i> Envoyer en maintenance

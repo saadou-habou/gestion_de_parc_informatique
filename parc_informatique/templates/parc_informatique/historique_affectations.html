@@ -1,0 +1,65 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Historique des affectations — {{ appareil.nom }}{% endblock %}
+
+{% block page_header %}
+<div class="pi-breadcrumb">
+    <a href="{% url 'parc_informatique:index' %}">Appareils</a> /
+    <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}">{{ appareil.nom }}</a> / Affectations
+</div>
+<div class="pi-page-header">
+    <div>
+        <h1>Historique des affectations</h1>
+        <p>{{ appareil.nom }} — {{ affectations|length }} affectation{{ affectations|length|pluralize }} enregistrée{{ affectations|length|pluralize }}</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'parc_informatique:affecter_appareil' appareil.id %}" class="btn btn-pi-primary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-user-check"></i> Changer d'affectation
+        </a>
+        <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}" class="btn btn-light d-flex align-items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Retour à l'appareil
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card">
+    <div class="pi-card-body">
+        {% if affectations %}
+        <div class="pi-timeline">
+            {% for affectation in affectations %}
+            <div class="pi-timeline-item">
+                <span class="pi-timeline-dot" style="background: {% if affectation.en_cours %}var(--pi-success){% else %}var(--pi-text-muted){% endif %};">
+                    <i class="fa-solid {% if affectation.en_cours %}fa-user{% else %}fa-user-slash{% endif %}"></i>
+                </span>
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="fw-semibold">
+                            {{ affectation.utilisateur|default:"Utilisateur retiré" }}
+                        </div>
+                        <div class="text-muted" style="font-size:.82rem;">
+                            Du {{ affectation.date_debut }}
+                            {% if affectation.date_fin %} au {{ affectation.date_fin }}{% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        {% if affectation.en_cours %}
+                            <span class="pi-badge pi-badge-success">En cours</span>
+                        {% else %}
+                            <span class="pi-badge pi-badge-neutral">Terminée</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="pi-empty">
+            <i class="fa-solid fa-user-clock"></i>
+            Aucune affectation n'a encore été enregistrée pour cet appareil.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

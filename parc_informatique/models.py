@@ -1,5 +1,4 @@
 from django.db import models
-
 from django.utils import timezone
 
 
@@ -73,3 +72,34 @@ class HistoriqueMaintenance(models.Model):
 
     def __str__(self):
         return f"Maintenance de {self.appareil.nom} le {self.date_intervention}"
+
+
+class HistoriqueAffectation(models.Model):
+    """
+    Historise chaque affectation d'un appareil à un utilisateur.
+    `date_fin` vaut None tant que l'affectation est en cours ; elle est
+    renseignée automatiquement dès que l'appareil est réaffecté ou retiré
+    à l'utilisateur (voir la vue `affecter_appareil`).
+    """
+
+    appareil = models.ForeignKey(
+        Appareil, on_delete=models.CASCADE, related_name="affectations"
+    )
+    utilisateur = models.ForeignKey(
+        Utilisateur, on_delete=models.SET_NULL, null=True, related_name="affectations"
+    )
+    date_debut = models.DateField(default=timezone.now)
+    date_fin = models.DateField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-date_debut", "-id"]
+
+    def __str__(self):
+        utilisateur = self.utilisateur or "Non affecté"
+        if self.date_fin:
+            return f"{self.appareil.nom} → {utilisateur} ({self.date_debut} → {self.date_fin})"
+        return f"{self.appareil.nom} → {utilisateur} (depuis le {self.date_debut})"
+
+    @property
+    def en_cours(self):
+        return self.date_fin is None

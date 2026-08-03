@@ -69,6 +69,12 @@
 
         <div class="pi-card">
             <div class="pi-card-body d-grid gap-2">
+                <a href="{% url 'parc_informatique:affecter_appareil' appareil.id %}" class="btn btn-outline-secondary d-flex align-items-center gap-2 justify-content-center">
+                    <i class="fa-solid fa-user-check"></i> Changer d'affectation
+                </a>
+                <a href="{% url 'parc_informatique:historique_affectations' appareil.id %}" class="btn btn-outline-secondary d-flex align-items-center gap-2 justify-content-center">
+                    <i class="fa-solid fa-user-clock"></i> Historique des affectations
+                </a>
                 <a href="{% url 'parc_informatique:historique_maintenance' appareil.id %}" class="btn btn-outline-secondary d-flex align-items-center gap-2 justify-content-center">
                     <i class="fa-solid fa-clock-rotate-left"></i> Historique de maintenance
                 </a>

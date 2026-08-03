@@ -23,9 +23,10 @@
         </a>
 
         <div class="pi-nav-section-label">Support</div>
-        <span class="pi-nav-link" style="opacity:.5; cursor:not-allowed;" title="Bientôt disponible">
+        <a href="{% url 'parc_informatique:liste_maintenances' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'liste_maintenances' %}active{% endif %}">
             <i class="fa-solid fa-screwdriver-wrench"></i> Maintenances
-        </span>
+        </a>
         <a href="{% url 'parc_informatique:liste_utilisateurs' %}"
            class="pi-nav-link {% if request.resolver_match.url_name == 'liste_utilisateurs' or request.resolver_match.url_name == 'profil_utilisateur' %}active{% endif %}">
             <i class="fa-solid fa-users"></i> Utilisateurs

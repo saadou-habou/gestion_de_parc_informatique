@@ -131,6 +131,7 @@
 <div class="pi-card mt-3">
     <div class="pi-card-header">
         <h5>Dernières activités de maintenance</h5>
+        <a href="{% url 'parc_informatique:liste_maintenances' %}" class="btn btn-sm btn-light">Voir tout</a>
     </div>
     <div class="pi-card-body">
         {% if dernieres_activites %}

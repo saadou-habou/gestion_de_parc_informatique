@@ -1,0 +1,139 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Maintenances — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-page-header">
+    <div>
+        <h1>Maintenances</h1>
+        <p>{{ total_maintenances }} intervention{{ total_maintenances|pluralize }} enregistrée{{ total_maintenances|pluralize }}</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Cartes stats -->
+<div class="row row-cols-2 row-cols-lg-3 g-3 mb-4">
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-info-bg); color:var(--pi-info);">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ total_maintenances }}</div>
+                <div class="pi-stat-label">Interventions au total</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-danger-bg); color:var(--pi-danger);">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ maintenances_en_cours }}</div>
+                <div class="pi-stat-label">Non réparées</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-success-bg); color:var(--pi-success);">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ maintenances_terminees }}</div>
+                <div class="pi-stat-label">Réparées</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="pi-card">
+    <div class="pi-card-header flex-wrap gap-2">
+        <div class="pi-search" style="max-width: 320px;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" class="form-control" placeholder="Rechercher un appareil, un technicien…"
+                   data-pi-search-input="#pi-maintenances-table">
+        </div>
+        <div class="btn-group btn-group-sm" data-pi-filter="#pi-maintenances-table" role="group">
+            <button type="button" class="btn btn-outline-secondary active" data-pi-filter-value="all">Toutes</button>
+            <button type="button" class="btn btn-outline-secondary" data-pi-filter-value="Non réparé">Non réparées</button>
+            <button type="button" class="btn btn-outline-secondary" data-pi-filter-value="Réparé">Réparées</button>
+        </div>
+    </div>
+
+    <div class="pi-table-wrap">
+        <table class="pi-table mb-0" id="pi-maintenances-table">
+            <thead>
+                <tr>
+                    <th>Appareil</th>
+                    <th>Date d'intervention</th>
+                    <th>Technicien</th>
+                    <th>Description</th>
+                    <th>Statut</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for maintenance in maintenances %}
+                <tr data-status="{{ maintenance.statut }}">
+                    <td>
+                        <a href="{% url 'parc_informatique:afficher_appareil' maintenance.appareil.id %}" class="fw-semibold text-decoration-none">
+                            {{ maintenance.appareil.nom }}
+                        </a>
+                    </td>
+                    <td>{{ maintenance.date_intervention }}</td>
+                    <td>{{ maintenance.technicien }}</td>
+                    <td class="text-muted" style="max-width: 280px;">{{ maintenance.description|truncatechars:80 }}</td>
+                    <td>
+                        {% if maintenance.statut == "Réparé" %}
+                            <span class="pi-badge pi-badge-success">Réparé</span>
+                        {% else %}
+                            <span class="pi-badge pi-badge-danger">Non réparé</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="pi-row-actions">
+                            <a href="{% url 'parc_informatique:historique_maintenance' maintenance.appareil.id %}" class="pi-btn-icon" title="Voir l'historique de l'appareil">
+                                <i class="fa-regular fa-eye"></i>
+                            </a>
+                            {% if maintenance.statut != "Réparé" %}
+                            <form method="post" action="{% url 'parc_informatique:terminer_maintenance' maintenance.id %}" data-pi-loading>
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="pi-btn-icon" title="Marquer comme réparé"
+                                        data-pi-confirm="Marquer cette intervention comme réparée et repasser l'appareil en 'Disponible' si aucune autre maintenance n'est en cours ?">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="pi-empty">
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                            Aucune intervention de maintenance enregistrée pour le moment.
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr class="pi-table-empty-row" style="display:none;">
+                    <td colspan="6">
+                        <div class="pi-empty">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Aucun résultat pour cette recherche.
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% include "parc_informatique/include/pagination.html" %}
+</div>
+{% endblock %}

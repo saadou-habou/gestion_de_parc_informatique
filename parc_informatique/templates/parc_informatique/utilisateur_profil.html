@@ -45,9 +45,9 @@
     </div>
 
     <div class="col-lg-8">
-        <div class="pi-card">
+        <div class="pi-card mb-3">
             <div class="pi-card-header">
-                <h5>Appareils affectés</h5>
+                <h5>Appareils actuellement affectés</h5>
                 <span class="pi-badge pi-badge-info">{{ appareils_affectes|length }} appareil{{ appareils_affectes|length|pluralize }}</span>
             </div>
             <div class="pi-card-body p-0">
@@ -91,13 +91,46 @@
             </div>
         </div>
 
-        <div class="alert alert-light border mt-3 mb-0 d-flex align-items-start gap-2" style="font-size:.85rem;">
-            <i class="fa-solid fa-circle-info text-muted mt-1"></i>
-            <div>
-                Cette vue affiche les affectations <strong>actuelles</strong>. Le modèle de données ne
-                conserve pas encore d'historique des affectations passées (seule l'affectation en cours
-                est stockée sur chaque appareil) — un modèle dédié pourrait être ajouté si un historique
-                complet des affectations est nécessaire.
+        <div class="pi-card">
+            <div class="pi-card-header">
+                <h5>Historique des affectations</h5>
+                <span class="pi-badge pi-badge-neutral">{{ historique_affectations|length }} entrée{{ historique_affectations|length|pluralize }}</span>
+            </div>
+            <div class="pi-card-body">
+                {% if historique_affectations %}
+                <div class="pi-timeline">
+                    {% for affectation in historique_affectations %}
+                    <div class="pi-timeline-item">
+                        <span class="pi-timeline-dot" style="background: {% if affectation.en_cours %}var(--pi-success){% else %}var(--pi-text-muted){% endif %};">
+                            <i class="fa-solid {% if affectation.en_cours %}fa-user{% else %}fa-user-slash{% endif %}"></i>
+                        </span>
+                        <div class="d-flex justify-content-between flex-wrap gap-2">
+                            <div>
+                                <a href="{% url 'parc_informatique:afficher_appareil' affectation.appareil.id %}" class="fw-semibold text-decoration-none">
+                                    {{ affectation.appareil.nom }}
+                                </a>
+                                <div class="text-muted" style="font-size:.82rem;">
+                                    Du {{ affectation.date_debut }}
+                                    {% if affectation.date_fin %} au {{ affectation.date_fin }}{% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                {% if affectation.en_cours %}
+                                    <span class="pi-badge pi-badge-success">En cours</span>
+                                {% else %}
+                                    <span class="pi-badge pi-badge-neutral">Terminée</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="pi-empty">
+                    <i class="fa-solid fa-user-clock"></i>
+                    Aucune affectation enregistrée pour cet utilisateur.
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
