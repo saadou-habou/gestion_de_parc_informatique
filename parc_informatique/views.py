@@ -1,3 +1,6 @@
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -6,10 +9,18 @@ from django.utils.timezone import now
 from parc_informatique.forms import (
     AffectationForm,
     AppareilForm,
+    BootstrapPasswordChangeForm,
     HistoriqueMaintenanceForm,
     ModificationAppareilForm,
+    TechnicienForm,
 )
-from parc_informatique.models import Appareil, HistoriqueAffectation, HistoriqueMaintenance, Utilisateur
+from parc_informatique.models import (
+    Appareil,
+    HistoriqueAffectation,
+    HistoriqueMaintenance,
+    Technicien,
+    Utilisateur,
+)
 
 
 PARC_INFORMATIQUE_INDEX = "parc_informatique:index"
@@ -17,6 +28,7 @@ PARC_INFORMATIQUE_INDEX = "parc_informatique:index"
 APPAREILS_PAR_PAGE = 10
 UTILISATEURS_PAR_PAGE = 10
 MAINTENANCES_PAR_PAGE = 10
+TECHNICIENS_PAR_PAGE = 10
 
 
 def dashboard(request):
@@ -78,17 +90,44 @@ def ajouter_appareil(request):
 
 
 def modifier_appareil(request, appareil_id):
-    appareil = Appareil.objects.get(pk=appareil_id)
+    appareil = get_object_or_404(Appareil, pk=appareil_id)
+    ancien_etat = appareil.etat
+
     if request.method == "POST":
         form = ModificationAppareilForm(request.POST, instance=appareil)
 
         if form.is_valid():
+            nouvel_etat = form.cleaned_data["etat"]
+
+            if nouvel_etat == "En réparation" and ancien_etat != "En réparation":
+                # On ne bascule jamais l'état vers "En réparation" depuis ce
+                # formulaire rapide : ça créait des appareils "En réparation"
+                # sans aucune intervention associée, donc invisibles depuis
+                # la page Maintenances. On redirige vers le formulaire dédié
+                # pour que technicien + description soient bien enregistrés.
+                messages.info(
+                    request,
+                    "Merci de renseigner les détails de l'intervention (technicien, description) "
+                    "pour envoyer cet appareil en maintenance."
+                )
+                return redirect("parc_informatique:envoyer_en_maintenance", appareil_id=appareil.id)
+
             form.save()
+
+            if ancien_etat == "En réparation" and nouvel_etat != "En réparation":
+                # Symétriquement, si l'appareil sort de l'état "En réparation"
+                # via ce formulaire, on clôture les interventions encore
+                # ouvertes pour que l'historique de maintenance reste cohérent
+                # avec l'état affiché sur la fiche appareil.
+                HistoriqueMaintenance.objects.filter(
+                    appareil=appareil, statut="Non réparé"
+                ).update(statut="Réparé")
+
             return redirect(PARC_INFORMATIQUE_INDEX)
     else:
         form = ModificationAppareilForm(instance=appareil)
 
-    return render(request, "parc_informatique/appareil_edit_form.html", {"form": form})
+    return render(request, "parc_informatique/appareil_edit_form.html", {"form": form, "appareil": appareil})
 
 
 def supprimer_appareil(request, appareil_id):
@@ -256,3 +295,92 @@ def terminer_maintenance(request, maintenance_id):
     ):
         return redirect(next_url)
     return redirect("parc_informatique:liste_maintenances")
+
+
+# ---------------------------------------------------------------------------
+# Techniciens
+# ---------------------------------------------------------------------------
+
+def liste_techniciens(request):
+    techniciens_list = Technicien.objects.all().order_by("nom", "prenom")
+    paginator = Paginator(techniciens_list, TECHNICIENS_PAR_PAGE)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "techniciens": page_obj,
+        "page_obj": page_obj,
+        "total_techniciens": paginator.count,
+    }
+    return render(request, "parc_informatique/techniciens_liste.html", context)
+
+
+def ajouter_technicien(request):
+    if request.method == "POST":
+        form = TechnicienForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Technicien ajouté avec succès.")
+            return redirect("parc_informatique:liste_techniciens")
+    else:
+        form = TechnicienForm()
+    return render(request, "parc_informatique/technicien-form.html", {"form": form})
+
+
+def modifier_technicien(request, technicien_id):
+    technicien = get_object_or_404(Technicien, pk=technicien_id)
+    if request.method == "POST":
+        form = TechnicienForm(request.POST, instance=technicien)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Technicien mis à jour.")
+            return redirect("parc_informatique:liste_techniciens")
+    else:
+        form = TechnicienForm(instance=technicien)
+    return render(
+        request,
+        "parc_informatique/technicien_edit_form.html",
+        {"form": form, "technicien": technicien},
+    )
+
+
+def supprimer_technicien(request, technicien_id):
+    technicien = get_object_or_404(Technicien, pk=technicien_id)
+    if request.method == "POST":
+        technicien.delete()
+        messages.success(request, "Technicien supprimé. Son historique d'interventions est conservé.")
+        return redirect("parc_informatique:liste_techniciens")
+    return render(
+        request,
+        "parc_informatique/confirmer_suppression_technicien.html",
+        {"technicien": technicien},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Compte (profil / paramètres)
+# ---------------------------------------------------------------------------
+
+@login_required
+def profil_compte(request):
+    return render(request, "parc_informatique/compte/profil.html")
+
+
+@login_required
+def parametres_compte(request):
+    if request.method == "POST":
+        password_form = BootstrapPasswordChangeForm(user=request.user, data=request.POST)
+        if password_form.is_valid():
+            user = password_form.save()
+            # Sans ça, changer son propre mot de passe invaliderait la
+            # session en cours et déconnecterait immédiatement l'utilisateur.
+            update_session_auth_hash(request, user)
+            messages.success(request, "Mot de passe mis à jour avec succès.")
+            return redirect("parc_informatique:parametres_compte")
+    else:
+        password_form = BootstrapPasswordChangeForm(user=request.user)
+
+    return render(
+        request,
+        "parc_informatique/compte/parametres.html",
+        {"password_form": password_form},
+    )

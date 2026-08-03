@@ -1,0 +1,97 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Techniciens — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-page-header">
+    <div>
+        <h1>Techniciens</h1>
+        <p>{{ total_techniciens }} technicien{{ total_techniciens|pluralize }} enregistré{{ total_techniciens|pluralize }}</p>
+    </div>
+    <a href="{% url 'parc_informatique:ajouter_technicien' %}" class="btn btn-pi-primary d-flex align-items-center gap-2">
+        <i class="fa-solid fa-plus"></i> Ajouter un technicien
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card">
+    <div class="pi-card-header">
+        <div class="pi-search" style="max-width: 320px;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" class="form-control" placeholder="Rechercher un technicien…"
+                   data-pi-search-input="#pi-techniciens-table">
+        </div>
+    </div>
+
+    <div class="pi-table-wrap">
+        <table class="pi-table mb-0" id="pi-techniciens-table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Spécialité</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th>Interventions</th>
+                    <th>Statut</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for technicien in techniciens %}
+                <tr>
+                    <td class="fw-semibold d-flex align-items-center gap-2">
+                        <div class="pi-avatar" style="width:30px;height:30px;font-size:.7rem;">
+                            {{ technicien.nom|slice:":1" }}{{ technicien.prenom|slice:":1" }}
+                        </div>
+                        {{ technicien.nom }} {{ technicien.prenom }}
+                    </td>
+                    <td>{{ technicien.specialite|default:"—" }}</td>
+                    <td>{{ technicien.email|default:"—" }}</td>
+                    <td>{{ technicien.telephone|default:"—" }}</td>
+                    <td>
+                        <span class="pi-badge pi-badge-info">{{ technicien.maintenances.count }} intervention{{ technicien.maintenances.count|pluralize }}</span>
+                    </td>
+                    <td>
+                        {% if technicien.actif %}
+                            <span class="pi-badge pi-badge-success">Actif</span>
+                        {% else %}
+                            <span class="pi-badge pi-badge-neutral">Inactif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="pi-row-actions">
+                            <a href="{% url 'parc_informatique:modifier_technicien' technicien.id %}" class="pi-btn-icon" title="Modifier">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <a href="{% url 'parc_informatique:supprimer_technicien' technicien.id %}" class="pi-btn-icon danger" title="Supprimer">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="pi-empty">
+                            <i class="fa-solid fa-user-gear"></i>
+                            Aucun technicien enregistré pour le moment.
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr class="pi-table-empty-row" style="display:none;">
+                    <td colspan="7">
+                        <div class="pi-empty">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Aucun résultat pour cette recherche.
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% include "parc_informatique/include/pagination.html" %}
+</div>
+{% endblock %}

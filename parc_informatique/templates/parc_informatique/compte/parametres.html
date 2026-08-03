@@ -1,0 +1,31 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Paramètres — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-breadcrumb"><a href="{% url 'parc_informatique:profil_compte' %}">Mon profil</a> / Paramètres</div>
+<div class="pi-page-header">
+    <div>
+        <h1>Paramètres du compte</h1>
+        <p>Gérez la sécurité de votre compte.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card" style="max-width: 560px;">
+    <div class="pi-card-header"><h5>Changer le mot de passe</h5></div>
+    <div class="pi-card-body">
+        <form method="post" class="pi-form" data-pi-loading novalidate>
+            {% csrf_token %}
+            {% include "parc_informatique/include/form_fields.html" with form=password_form %}
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-pi-primary d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-key"></i> Mettre à jour le mot de passe
+                </button>
+                <a href="{% url 'parc_informatique:profil_compte' %}" class="btn btn-light">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

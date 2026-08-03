@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — Parc Informatique</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'parc_informatique/css/main.css' %}">
+</head>
+<body style="background: radial-gradient(circle at top left, #1c2044, #0c0e1f 60%); min-height:100vh;">
+
+<div class="d-flex align-items-center justify-content-center" style="min-height:100vh; padding:1.5rem;">
+    <div class="pi-card pi-fade-in" style="width:100%; max-width:400px;">
+        <div class="pi-card-body p-4">
+            <div class="d-flex flex-column align-items-center mb-4">
+                <div class="pi-brand-badge mb-3" style="width:56px; height:56px; font-size:1.3rem;">PI</div>
+                <h4 class="mb-1">Parc Informatique</h4>
+                <p class="text-muted mb-0" style="font-size:.88rem;">Connectez-vous pour accéder à votre espace</p>
+            </div>
+
+            {% include "parc_informatique/include/messages.html" %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2" style="font-size:.85rem;">
+                {% for error in form.non_field_errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" class="pi-form" data-pi-loading novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.username.id_for_label }}" class="form-label">Identifiant</label>
+                    {{ form.username }}
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">Mot de passe</label>
+                    {{ form.password }}
+                </div>
+                <input type="hidden" name="next" value="{{ next }}">
+                <button type="submit" class="btn btn-pi-primary w-100 d-flex align-items-center justify-content-center gap-2 mt-4">
+                    <i class="fa-solid fa-right-to-bracket"></i> Se connecter
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="pi-loading-overlay">
+    <div class="pi-spinner"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'parc_informatique/js/main.js' %}"></script>
+</body>
+</html>

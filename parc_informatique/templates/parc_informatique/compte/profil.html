@@ -1,0 +1,90 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Mon profil — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-page-header">
+    <div class="d-flex align-items-center gap-3">
+        <div class="pi-avatar" style="width:52px;height:52px;font-size:1.1rem;">
+            {{ request.user.username|slice:":2"|upper }}
+        </div>
+        <div>
+            <h1 class="mb-0">{{ request.user.get_full_name|default:request.user.username }}</h1>
+            <p>{{ request.user.email|default:"Aucun email renseigné" }}</p>
+        </div>
+    </div>
+    <a href="{% url 'parc_informatique:parametres_compte' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+        <i class="fa-solid fa-gear"></i> Paramètres
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="pi-card">
+            <div class="pi-card-header"><h5>Informations du compte</h5></div>
+            <div class="pi-card-body">
+                <div class="row row-cols-1 row-cols-sm-2 g-3">
+                    <div>
+                        <div class="text-muted" style="font-size:.78rem;">Identifiant</div>
+                        <div class="fw-semibold">{{ request.user.username }}</div>
+                    </div>
+                    <div>
+                        <div class="text-muted" style="font-size:.78rem;">Email</div>
+                        <div class="fw-semibold">{{ request.user.email|default:"—" }}</div>
+                    </div>
+                    <div>
+                        <div class="text-muted" style="font-size:.78rem;">Prénom</div>
+                        <div class="fw-semibold">{{ request.user.first_name|default:"—" }}</div>
+                    </div>
+                    <div>
+                        <div class="text-muted" style="font-size:.78rem;">Nom</div>
+                        <div class="fw-semibold">{{ request.user.last_name|default:"—" }}</div>
+                    </div>
+                    <div>
+                        <div class="text-muted" style="font-size:.78rem;">Membre depuis</div>
+                        <div class="fw-semibold">{{ request.user.date_joined|date:"d/m/Y" }}</div>
+                    </div>
+                    <div>
+                        <div class="text-muted" style="font-size:.78rem;">Dernière connexion</div>
+                        <div class="fw-semibold">{{ request.user.last_login|date:"d/m/Y H:i"|default:"—" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="pi-card">
+            <div class="pi-card-header"><h5>Rôle & accès</h5></div>
+            <div class="pi-card-body d-flex flex-column gap-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <span>Compte actif</span>
+                    {% if request.user.is_active %}
+                        <span class="pi-badge pi-badge-success">Actif</span>
+                    {% else %}
+                        <span class="pi-badge pi-badge-danger">Désactivé</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <span>Accès équipe technique</span>
+                    {% if request.user.is_staff %}
+                        <span class="pi-badge pi-badge-info">Staff</span>
+                    {% else %}
+                        <span class="pi-badge pi-badge-neutral">Standard</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <span>Super-administrateur</span>
+                    {% if request.user.is_superuser %}
+                        <span class="pi-badge pi-badge-warning">Oui</span>
+                    {% else %}
+                        <span class="pi-badge pi-badge-neutral">Non</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

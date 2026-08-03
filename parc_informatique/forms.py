@@ -1,20 +1,22 @@
 from django import forms
-from parc_informatique.models import Appareil, HistoriqueMaintenance, Local, Utilisateur
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+
+from parc_informatique.models import Appareil, HistoriqueMaintenance, Local, Technicien, Utilisateur
 
 
-class BootstrapModelForm(forms.ModelForm):
+class BootstrapFieldsMixin:
     """
-    Base commune à tous les formulaires de l'app : applique automatiquement
-    les classes Bootstrap 5 (form-control / form-select / form-check-input)
-    à chaque champ, même si le widget n'a pas été déclaré explicitement dans
-    `Meta.widgets`.
+    Applique automatiquement les classes Bootstrap 5 (form-control /
+    form-select / form-check-input) à chaque champ d'un formulaire, qu'il
+    s'agisse d'un ModelForm ou d'un formulaire natif de Django (connexion,
+    changement de mot de passe…).
 
     Sans ça, seuls les champs dont le widget est explicitement personnalisé
     reçoivent une classe CSS : tous les autres (générés automatiquement par
-    Django à partir du modèle, ex. les <select> issus des `choices`) sont
-    rendus avec le style par défaut du navigateur, ce qui casse visuellement
-    la page au milieu du reste de l'interface stylée. C'était le problème
-    sur la page "Ajouter un appareil".
+    Django, ex. les <select> issus des `choices`) sont rendus avec le style
+    par défaut du navigateur, ce qui casse visuellement la page au milieu du
+    reste de l'interface stylée. C'était le problème sur la page
+    "Ajouter un appareil".
     """
 
     def __init__(self, *args, **kwargs):
@@ -33,6 +35,20 @@ class BootstrapModelForm(forms.ModelForm):
             if base_class not in classes:
                 classes.append(base_class)
             widget.attrs["class"] = " ".join(classes)
+
+
+class BootstrapModelForm(BootstrapFieldsMixin, forms.ModelForm):
+    pass
+
+
+class BootstrapAuthenticationForm(BootstrapFieldsMixin, AuthenticationForm):
+    """Formulaire de connexion (django.contrib.auth) stylé Bootstrap."""
+    pass
+
+
+class BootstrapPasswordChangeForm(BootstrapFieldsMixin, PasswordChangeForm):
+    """Formulaire de changement de mot de passe, utilisé dans "Paramètres"."""
+    pass
 
 
 class AppareilForm(BootstrapModelForm):
@@ -91,7 +107,37 @@ class HistoriqueMaintenanceForm(BootstrapModelForm):
             "description": forms.Textarea(
                 attrs={"rows": 4, "placeholder": "Expliquez pourquoi l'appareil nécessite une maintenance."}
             ),
-            "technicien": forms.TextInput(attrs={"placeholder": "Nom du technicien"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Ne proposer que les techniciens actifs dans la liste déroulante,
+        # sauf s'il s'agit d'une intervention existante déjà liée à un
+        # technicien devenu inactif entre-temps (on ne veut pas le faire
+        # disparaître silencieusement du formulaire d'édition).
+        queryset = Technicien.objects.filter(actif=True)
+        if self.instance and self.instance.technicien_id:
+            queryset = queryset | Technicien.objects.filter(pk=self.instance.technicien_id)
+        self.fields["technicien"].queryset = queryset.distinct().order_by("nom", "prenom")
+        self.fields["technicien"].empty_label = "— Sélectionner un technicien —"
+
+
+class TechnicienForm(BootstrapModelForm):
+    class Meta:
+        model = Technicien
+        fields = ["nom", "prenom", "email", "telephone", "specialite", "actif"]
+        labels = {
+            "nom": "Nom",
+            "prenom": "Prénom",
+            "email": "Email",
+            "telephone": "Téléphone",
+            "specialite": "Spécialité",
+            "actif": "Technicien actif",
+        }
+        widgets = {
+            "nom": forms.TextInput(attrs={"placeholder": "Nom de famille"}),
+            "prenom": forms.TextInput(attrs={"placeholder": "Prénom"}),
+            "specialite": forms.TextInput(attrs={"placeholder": "Ex. Hardware, Réseau, Logiciel…"}),
         }
 
 

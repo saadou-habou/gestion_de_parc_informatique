@@ -8,6 +8,9 @@
         <h1>Maintenances</h1>
         <p>{{ total_maintenances }} intervention{{ total_maintenances|pluralize }} enregistrée{{ total_maintenances|pluralize }}</p>
     </div>
+    <a href="{% url 'parc_informatique:liste_techniciens' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+        <i class="fa-solid fa-user-gear"></i> Gérer les techniciens
+    </a>
 </div>
 {% endblock %}
 
@@ -85,7 +88,7 @@
                         </a>
                     </td>
                     <td>{{ maintenance.date_intervention }}</td>
-                    <td>{{ maintenance.technicien }}</td>
+                    <td>{{ maintenance.technicien|default:"Technicien retiré" }}</td>
                     <td class="text-muted" style="max-width: 280px;">{{ maintenance.description|truncatechars:80 }}</td>
                     <td>
                         {% if maintenance.statut == "Réparé" %}

@@ -27,6 +27,10 @@
            class="pi-nav-link {% if request.resolver_match.url_name == 'liste_maintenances' %}active{% endif %}">
             <i class="fa-solid fa-screwdriver-wrench"></i> Maintenances
         </a>
+        <a href="{% url 'parc_informatique:liste_techniciens' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'liste_techniciens' or request.resolver_match.url_name == 'ajouter_technicien' or request.resolver_match.url_name == 'modifier_technicien' %}active{% endif %}">
+            <i class="fa-solid fa-user-gear"></i> Techniciens
+        </a>
         <a href="{% url 'parc_informatique:liste_utilisateurs' %}"
            class="pi-nav-link {% if request.resolver_match.url_name == 'liste_utilisateurs' or request.resolver_match.url_name == 'profil_utilisateur' %}active{% endif %}">
             <i class="fa-solid fa-users"></i> Utilisateurs

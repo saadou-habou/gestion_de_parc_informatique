@@ -22,6 +22,28 @@ class Utilisateur(models.Model):
         return f"{self.nom} {self.prenom}"
 
 
+class Technicien(models.Model):
+    nom = models.CharField(max_length=100)
+    prenom = models.CharField(max_length=100, blank=True)
+    email = models.EmailField(blank=True)
+    telephone = models.CharField(max_length=15, blank=True)
+    specialite = models.CharField(
+        max_length=100, blank=True, help_text="Ex. Hardware, Réseau, Logiciel…"
+    )
+    actif = models.BooleanField(
+        default=True,
+        help_text="Un technicien inactif n'apparaît plus dans les nouveaux formulaires "
+                   "de maintenance, mais son historique d'interventions est conservé.",
+    )
+
+    class Meta:
+        ordering = ["nom", "prenom"]
+
+    def __str__(self):
+        complet = f"{self.nom} {self.prenom}".strip()
+        return complet if self.actif else f"{complet} (inactif)"
+
+
 class Appareil(models.Model):
     ETAT_CHOICES = [
         ("Disponible", "Disponible"),
@@ -67,7 +89,13 @@ class HistoriqueMaintenance(models.Model):
     )
     date_intervention = models.DateField()
     description = models.TextField()
-    technicien = models.CharField(max_length=100)
+    technicien = models.ForeignKey(
+        Technicien,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="maintenances",
+    )
     statut = models.CharField(max_length=50, choices=STATUT_CHOICES, default="Réparé")
 
     def __str__(self):

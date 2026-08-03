@@ -1,0 +1,30 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Ajouter un technicien — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-breadcrumb"><a href="{% url 'parc_informatique:liste_techniciens' %}">Techniciens</a> / Ajouter</div>
+<div class="pi-page-header">
+    <div>
+        <h1>Ajouter un technicien</h1>
+        <p>Il apparaîtra ensuite dans la liste déroulante du formulaire "Envoyer en maintenance".</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card" style="max-width: 640px;">
+    <div class="pi-card-body">
+        <form method="post" class="pi-form" data-pi-loading novalidate>
+            {% csrf_token %}
+            {% include "parc_informatique/include/form_fields.html" %}
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-pi-primary d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-check"></i> Ajouter le technicien
+                </button>
+                <a href="{% url 'parc_informatique:liste_techniciens' %}" class="btn btn-light">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

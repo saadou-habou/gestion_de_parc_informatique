@@ -1,0 +1,36 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Supprimer un technicien — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-breadcrumb"><a href="{% url 'parc_informatique:liste_techniciens' %}">Techniciens</a> / Supprimer</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card mx-auto" style="max-width: 520px;">
+    <div class="pi-card-body text-center py-4">
+        <div class="pi-stat-icon mx-auto mb-3" style="background: var(--pi-danger-bg); color: var(--pi-danger); width:64px; height:64px; font-size:1.5rem;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h4>Supprimer ce technicien ?</h4>
+        <p class="text-muted">
+            Vous êtes sur le point de supprimer <strong>{{ technicien.nom }} {{ technicien.prenom }}</strong>.
+            {% if technicien.maintenances.count %}
+                Son historique de {{ technicien.maintenances.count }} intervention{{ technicien.maintenances.count|pluralize }}
+                sera conservé, mais ne sera plus rattaché à un technicien nommé.
+            {% endif %}
+            Si vous voulez juste qu'il n'apparaisse plus dans les nouveaux formulaires,
+            préférez plutôt le passer en <strong>inactif</strong> via "Modifier".
+        </p>
+
+        <form method="post" data-pi-loading class="d-flex justify-content-center gap-2 mt-3">
+            {% csrf_token %}
+            <a href="{% url 'parc_informatique:liste_techniciens' %}" class="btn btn-light">Annuler</a>
+            <button type="submit" class="btn btn-danger d-flex align-items-center gap-2"
+                    data-pi-confirm="Confirmez-vous la suppression définitive de {{ technicien.nom }} {{ technicien.prenom }} ?">
+                <i class="fa-solid fa-trash"></i> Oui, supprimer
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
