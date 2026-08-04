@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -131,3 +132,47 @@ class HistoriqueAffectation(models.Model):
     @property
     def en_cours(self):
         return self.date_fin is None
+
+
+class Notification(models.Model):
+    """
+    Alerte générée automatiquement à partir de règles métier (voir
+    parc_informatique/notifications.py : `generer_notifications()`) —
+    jamais créée manuellement.
+
+    `cle_naturelle` identifie l'événement de façon unique (ex.
+    "maintenance_retard:42") : ça permet de resynchroniser les
+    notifications à chaque appel sans jamais créer de doublon, et de savoir
+    quand un événement n'est plus d'actualité (→ `resolue = True`).
+    """
+
+    TYPE_CHOICES = [
+        ("maintenance_retard", "Maintenance en retard"),
+        ("appareil_obsolete", "Appareil obsolète"),
+    ]
+    NIVEAU_CHOICES = [
+        ("info", "Info"),
+        ("warning", "Avertissement"),
+        ("danger", "Critique"),
+    ]
+
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    cle_naturelle = models.CharField(max_length=100, unique=True)
+    niveau = models.CharField(max_length=20, choices=NIVEAU_CHOICES, default="info")
+    message = models.CharField(max_length=255)
+    lien = models.CharField(max_length=255, blank=True)
+    appareil = models.ForeignKey(
+        Appareil, on_delete=models.CASCADE, null=True, blank=True, related_name="notifications"
+    )
+    cree_le = models.DateTimeField(auto_now_add=True)
+    resolue = models.BooleanField(default=False)
+    resolue_le = models.DateTimeField(null=True, blank=True)
+    lue_par = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="notifications_lues"
+    )
+
+    class Meta:
+        ordering = ["-cree_le"]
+
+    def __str__(self):
+        return self.message

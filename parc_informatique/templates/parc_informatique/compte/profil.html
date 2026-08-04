@@ -60,6 +60,16 @@
             <div class="pi-card-header"><h5>Rôle & accès</h5></div>
             <div class="pi-card-body d-flex flex-column gap-3">
                 <div class="d-flex align-items-center justify-content-between">
+                    <span>Rôle applicatif</span>
+                    {% if role_principal %}
+                        <span class="pi-badge {% if est_admin %}pi-badge-warning{% elif est_gestionnaire %}pi-badge-info{% else %}pi-badge-neutral{% endif %}">
+                            <i class="fa-solid fa-shield-halved"></i> {{ role_principal }}
+                        </span>
+                    {% else %}
+                        <span class="pi-badge pi-badge-neutral">Aucun rôle assigné</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center justify-content-between">
                     <span>Compte actif</span>
                     {% if request.user.is_active %}
                         <span class="pi-badge pi-badge-success">Actif</span>

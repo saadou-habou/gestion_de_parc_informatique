@@ -64,9 +64,11 @@
                             <a href="{% url 'parc_informatique:modifier_technicien' technicien.id %}" class="pi-btn-icon" title="Modifier">
                                 <i class="fa-solid fa-pen"></i>
                             </a>
+                            {% if est_admin %}
                             <a href="{% url 'parc_informatique:supprimer_technicien' technicien.id %}" class="pi-btn-icon danger" title="Supprimer">
                                 <i class="fa-solid fa-trash"></i>
                             </a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

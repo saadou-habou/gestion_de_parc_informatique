@@ -5,6 +5,7 @@ from parc_informatique.models import (
     HistoriqueAffectation,
     HistoriqueMaintenance,
     Local,
+    Notification,
     Technicien,
     Utilisateur,
 )
@@ -55,3 +56,11 @@ class HistoriqueAffectationAdmin(admin.ModelAdmin):
     @admin.display(boolean=True, description="En cours")
     def en_cours(self, obj):
         return obj.en_cours
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("message", "type", "niveau", "appareil", "resolue", "cree_le")
+    list_filter = ("type", "niveau", "resolue")
+    search_fields = ("message", "appareil__nom")
+    readonly_fields = ("cle_naturelle", "cree_le", "resolue_le")

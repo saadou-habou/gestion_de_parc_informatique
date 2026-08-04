@@ -8,9 +8,11 @@
         <h1>Appareils</h1>
         <p>{{ total_appareils }} appareil{{ total_appareils|pluralize }} enregistré{{ total_appareils|pluralize }}</p>
     </div>
+    {% if est_gestionnaire %}
     <a href="{% url 'parc_informatique:ajouter_appareil' %}" class="btn btn-pi-primary d-flex align-items-center gap-2">
         <i class="fa-solid fa-plus"></i> Ajouter un appareil
     </a>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -69,15 +71,19 @@
                             <a href="{% url 'parc_informatique:afficher_appareil' appareil.id %}" class="pi-btn-icon" title="Voir">
                                 <i class="fa-regular fa-eye"></i>
                             </a>
+                            {% if est_gestionnaire %}
                             <a href="{% url 'parc_informatique:affecter_appareil' appareil.id %}" class="pi-btn-icon" title="Affecter">
                                 <i class="fa-solid fa-user-check"></i>
                             </a>
                             <a href="{% url 'parc_informatique:modifier_appareil' appareil.id %}" class="pi-btn-icon" title="Modifier">
                                 <i class="fa-solid fa-pen"></i>
                             </a>
+                            {% endif %}
+                            {% if est_admin %}
                             <a href="{% url 'parc_informatique:supprimer_appareil' appareil.id %}" class="pi-btn-icon danger" title="Supprimer">
                                 <i class="fa-solid fa-trash"></i>
                             </a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

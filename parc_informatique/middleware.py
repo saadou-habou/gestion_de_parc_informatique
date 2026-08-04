@@ -13,7 +13,17 @@ class LoginRequiredMiddleware:
     est un outil interne, on protège l'ensemble de l'app derrière une seule
     connexion plutôt que de décorer chaque vue une par une avec
     @login_required — ce qui serait facile à oublier sur une nouvelle vue.
+
+    Les routes /api/ sont volontairement exemptées : elles sont
+    authentifiées par JWT (voir parc_informatique/api/), pas par le cookie
+    de session Django que ce middleware vérifie. C'est DRF (via
+    JWTAuthentication + les classes de permission) qui protège l'API, pas
+    ce middleware.
     """
+
+    # Préfixe des routes API, exemptées de la connexion par session
+    # (protégées à la place par JWT — voir parc_informatique/api/).
+    API_URL_PREFIX = "/api/"
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -27,7 +37,8 @@ class LoginRequiredMiddleware:
 
     def _est_exempte(self, request):
         """
-        Détermine si la page demandée doit rester accessible sans connexion.
+        Détermine si la page demandée doit rester accessible sans connexion
+        par session (l'API a son propre mécanisme d'authentification, JWT).
 
         Important : on ne peut PAS se baser sur `request.resolver_match` ici.
         Cet attribut n'est peuplé par Django qu'à l'intérieur de
@@ -38,5 +49,7 @@ class LoginRequiredMiddleware:
         chemin de la requête à l'URL réelle de la page de connexion.
         """
         if request.path.startswith(settings.STATIC_URL):
+            return True
+        if request.path.startswith(self.API_URL_PREFIX):
             return True
         return request.path == reverse("parc_informatique:login")

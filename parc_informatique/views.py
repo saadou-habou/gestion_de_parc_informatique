@@ -2,10 +2,12 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import now
 
+from parc_informatique.decorators import role_required
 from parc_informatique.forms import (
     AffectationForm,
     AppareilForm,
@@ -18,9 +20,12 @@ from parc_informatique.models import (
     Appareil,
     HistoriqueAffectation,
     HistoriqueMaintenance,
+    Notification,
     Technicien,
     Utilisateur,
 )
+from parc_informatique.notifications import generer_notifications
+from parc_informatique.roles import ADMIN, GESTIONNAIRE, TECHNICIEN
 
 
 PARC_INFORMATIQUE_INDEX = "parc_informatique:index"
@@ -29,6 +34,7 @@ APPAREILS_PAR_PAGE = 10
 UTILISATEURS_PAR_PAGE = 10
 MAINTENANCES_PAR_PAGE = 10
 TECHNICIENS_PAR_PAGE = 10
+NOTIFICATIONS_PAR_PAGE = 15
 
 
 def dashboard(request):
@@ -68,6 +74,7 @@ def afficher_appareil(request, appareil_id):
     return render(request, "parc_informatique/afficher_appareil.html", context)
 
 
+@role_required(ADMIN, GESTIONNAIRE)
 def ajouter_appareil(request):
     if request.method == "POST":
         form = AppareilForm(request.POST)
@@ -89,6 +96,7 @@ def ajouter_appareil(request):
     return render(request, "parc_informatique/appareil-form.html", context)
 
 
+@role_required(ADMIN, GESTIONNAIRE)
 def modifier_appareil(request, appareil_id):
     appareil = get_object_or_404(Appareil, pk=appareil_id)
     ancien_etat = appareil.etat
@@ -130,6 +138,7 @@ def modifier_appareil(request, appareil_id):
     return render(request, "parc_informatique/appareil_edit_form.html", {"form": form, "appareil": appareil})
 
 
+@role_required(ADMIN)
 def supprimer_appareil(request, appareil_id):
     appareil = Appareil.objects.get(pk=appareil_id)
     if request.method == "POST":
@@ -148,6 +157,7 @@ def historique_maintenance(request, appareil_id):
     return render(request, "parc_informatique/historique_maintenance.html", context)
 
 
+@role_required(ADMIN, GESTIONNAIRE, TECHNICIEN)
 def envoyer_en_maintenance(request, appareil_id):
     appareil = get_object_or_404(Appareil, pk=appareil_id)
 
@@ -200,6 +210,7 @@ def profil_utilisateur(request, utilisateur_id):
     return render(request, "parc_informatique/utilisateur_profil.html", context)
 
 
+@role_required(ADMIN, GESTIONNAIRE)
 def affecter_appareil(request, appareil_id):
     """Change l'utilisateur affecté à un appareil et historise le changement."""
     appareil = get_object_or_404(Appareil, pk=appareil_id)
@@ -268,6 +279,7 @@ def liste_maintenances(request):
     return render(request, "parc_informatique/maintenances_liste.html", context)
 
 
+@role_required(ADMIN, GESTIONNAIRE, TECHNICIEN)
 def terminer_maintenance(request, maintenance_id):
     """
     Marque une intervention comme réparée. Si l'appareil concerné n'a plus
@@ -314,6 +326,7 @@ def liste_techniciens(request):
     return render(request, "parc_informatique/techniciens_liste.html", context)
 
 
+@role_required(ADMIN, GESTIONNAIRE)
 def ajouter_technicien(request):
     if request.method == "POST":
         form = TechnicienForm(request.POST)
@@ -326,6 +339,7 @@ def ajouter_technicien(request):
     return render(request, "parc_informatique/technicien-form.html", {"form": form})
 
 
+@role_required(ADMIN, GESTIONNAIRE)
 def modifier_technicien(request, technicien_id):
     technicien = get_object_or_404(Technicien, pk=technicien_id)
     if request.method == "POST":
@@ -343,6 +357,7 @@ def modifier_technicien(request, technicien_id):
     )
 
 
+@role_required(ADMIN)
 def supprimer_technicien(request, technicien_id):
     technicien = get_object_or_404(Technicien, pk=technicien_id)
     if request.method == "POST":
@@ -384,3 +399,43 @@ def parametres_compte(request):
         "parc_informatique/compte/parametres.html",
         {"password_form": password_form},
     )
+
+
+# ---------------------------------------------------------------------------
+# Notifications
+# ---------------------------------------------------------------------------
+
+@login_required
+def notifications_liste(request):
+    generer_notifications()
+
+    notifications_list = (
+        Notification.objects.annotate(
+            lue=Exists(Notification.objects.filter(pk=OuterRef("pk"), lue_par=request.user))
+        )
+        .order_by("-cree_le")
+    )
+
+    paginator = Paginator(notifications_list, NOTIFICATIONS_PAR_PAGE)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "notifications": page_obj,
+        "page_obj": page_obj,
+        "notifications_non_resolues_count": Notification.objects.filter(resolue=False).count(),
+    }
+    return render(request, "parc_informatique/notifications_liste.html", context)
+
+
+@login_required
+def marquer_notifications_lues(request):
+    if request.method == "POST":
+        actives = Notification.objects.filter(resolue=False)
+        request.user.notifications_lues.add(*actives)
+
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return redirect(next_url)
+    return redirect("parc_informatique:notifications_liste")

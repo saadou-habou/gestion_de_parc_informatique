@@ -14,10 +14,49 @@
             <i class="fa-solid fa-plus"></i> Nouvel appareil
         </a>
 
-        <button class="pi-icon-btn" title="Notifications">
-            <i class="fa-regular fa-bell"></i>
-            <span class="pi-dot"></span>
-        </button>
+        <div class="dropdown">
+            <button class="pi-icon-btn dropdown-toggle" title="Notifications" data-bs-toggle="dropdown" style="border:none;">
+                <i class="fa-regular fa-bell"></i>
+                {% if notifications_non_lues_count %}<span class="pi-dot"></span>{% endif %}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow-sm p-0" style="width: 340px; max-height: 420px; overflow-y:auto;">
+                <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+                    <span class="fw-semibold" style="font-size:.85rem;">
+                        Notifications
+                        {% if notifications_non_lues_count %}<span class="pi-badge pi-badge-danger ms-1">{{ notifications_non_lues_count }}</span>{% endif %}
+                    </span>
+                    {% if notifications_non_lues_count %}
+                    <form method="post" action="{% url 'parc_informatique:marquer_notifications_lues' %}" class="m-0">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button type="submit" class="btn btn-link btn-sm p-0" style="font-size:.76rem;">Tout marquer comme lu</button>
+                    </form>
+                    {% endif %}
+                </div>
+
+                {% for notif in notifications_recentes %}
+                <a href="{{ notif.lien|default:'#' }}"
+                   class="dropdown-item d-flex align-items-start gap-2 py-2 px-3 {% if not notif.lue %}bg-light{% endif %}"
+                   style="white-space: normal;">
+                    <span class="mt-1 flex-shrink-0" style="width:8px;height:8px;border-radius:50%;background:
+                        {% if notif.niveau == 'danger' %}var(--pi-danger){% elif notif.niveau == 'warning' %}var(--pi-warning){% else %}var(--pi-info){% endif %};"></span>
+                    <span style="font-size:.82rem; line-height:1.35;">
+                        {{ notif.message }}
+                        <div class="text-muted" style="font-size:.72rem;">{{ notif.cree_le|timesince }}</div>
+                    </span>
+                </a>
+                {% empty %}
+                <div class="px-3 py-4 text-center text-muted" style="font-size:.82rem;">
+                    <i class="fa-regular fa-bell-slash d-block mb-2" style="font-size:1.3rem;"></i>
+                    Aucune alerte pour le moment.
+                </div>
+                {% endfor %}
+
+                <a href="{% url 'parc_informatique:notifications_liste' %}" class="dropdown-item text-center border-top py-2" style="font-size:.8rem;">
+                    Voir toutes les notifications
+                </a>
+            </div>
+        </div>
 
         <div class="dropdown">
             <a href="#" class="pi-user-chip dropdown-toggle" style="text-decoration:none;" data-bs-toggle="dropdown">

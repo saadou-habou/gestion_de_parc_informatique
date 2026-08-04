@@ -51,4 +51,8 @@ urlpatterns = [
     # Compte
     path("compte/profil/", views.profil_compte, name="profil_compte"),
     path("compte/parametres/", views.parametres_compte, name="parametres_compte"),
+
+    # Notifications
+    path("notifications/", views.notifications_liste, name="notifications_liste"),
+    path("notifications/marquer-lues/", views.marquer_notifications_lues, name="marquer_notifications_lues"),
 ]

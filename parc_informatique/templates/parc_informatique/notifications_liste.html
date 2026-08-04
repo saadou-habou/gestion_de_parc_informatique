@@ -1,0 +1,59 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Notifications — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-page-header">
+    <div>
+        <h1>Notifications</h1>
+        <p>{{ notifications_non_resolues_count }} alerte{{ notifications_non_resolues_count|pluralize }} active{{ notifications_non_resolues_count|pluralize }}</p>
+    </div>
+    <form method="post" action="{% url 'parc_informatique:marquer_notifications_lues' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-check-double"></i> Tout marquer comme lu
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card">
+    <div class="pi-card-header">
+        <div class="btn-group btn-group-sm" data-pi-filter="#pi-notifications-table" role="group">
+            <button type="button" class="btn btn-outline-secondary active" data-pi-filter-value="all">Toutes</button>
+            <button type="button" class="btn btn-outline-secondary" data-pi-filter-value="active">Actives</button>
+            <button type="button" class="btn btn-outline-secondary" data-pi-filter-value="resolue">Résolues</button>
+        </div>
+    </div>
+
+    <div id="pi-notifications-table">
+        {% for notif in notifications %}
+        <a href="{{ notif.lien|default:'#' }}"
+           data-status="{% if notif.resolue %}resolue{% else %}active{% endif %}"
+           class="d-flex align-items-start gap-3 px-4 py-3 text-decoration-none {% if not forloop.last %}border-bottom{% endif %} {% if not notif.lue and not notif.resolue %}bg-light{% endif %}"
+           style="color: inherit;">
+            <span class="mt-1 flex-shrink-0" style="width:10px;height:10px;border-radius:50%;background:
+                {% if notif.niveau == 'danger' %}var(--pi-danger){% elif notif.niveau == 'warning' %}var(--pi-warning){% else %}var(--pi-info){% endif %};"></span>
+            <div class="flex-grow-1">
+                <div class="fw-semibold" style="font-size:.9rem;">{{ notif.message }}</div>
+                <div class="text-muted" style="font-size:.78rem;">{{ notif.cree_le|date:"d/m/Y H:i" }} · {{ notif.cree_le|timesince }}</div>
+            </div>
+            {% if notif.resolue %}
+                <span class="pi-badge pi-badge-success">Résolue</span>
+            {% else %}
+                <span class="pi-badge {% if notif.niveau == 'danger' %}pi-badge-danger{% elif notif.niveau == 'warning' %}pi-badge-warning{% else %}pi-badge-info{% endif %}">Active</span>
+            {% endif %}
+        </a>
+        {% empty %}
+        <div class="pi-empty">
+            <i class="fa-regular fa-bell-slash"></i>
+            Aucune notification pour le moment.
+        </div>
+        {% endfor %}
+    </div>
+
+    {% include "parc_informatique/include/pagination.html" %}
+</div>
+{% endblock %}

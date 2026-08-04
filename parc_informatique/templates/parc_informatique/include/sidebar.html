@@ -17,16 +17,19 @@
            class="pi-nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
             <i class="fa-solid fa-display"></i> Appareils
         </a>
+        {% if est_gestionnaire %}
         <a href="{% url 'parc_informatique:ajouter_appareil' %}"
            class="pi-nav-link {% if request.resolver_match.url_name == 'ajouter_appareil' %}active{% endif %}">
             <i class="fa-solid fa-circle-plus"></i> Ajouter un appareil
         </a>
+        {% endif %}
 
         <div class="pi-nav-section-label">Support</div>
         <a href="{% url 'parc_informatique:liste_maintenances' %}"
            class="pi-nav-link {% if request.resolver_match.url_name == 'liste_maintenances' %}active{% endif %}">
             <i class="fa-solid fa-screwdriver-wrench"></i> Maintenances
         </a>
+        {% if est_gestionnaire %}
         <a href="{% url 'parc_informatique:liste_techniciens' %}"
            class="pi-nav-link {% if request.resolver_match.url_name == 'liste_techniciens' or request.resolver_match.url_name == 'ajouter_technicien' or request.resolver_match.url_name == 'modifier_technicien' %}active{% endif %}">
             <i class="fa-solid fa-user-gear"></i> Techniciens
@@ -35,9 +38,17 @@
            class="pi-nav-link {% if request.resolver_match.url_name == 'liste_utilisateurs' or request.resolver_match.url_name == 'profil_utilisateur' %}active{% endif %}">
             <i class="fa-solid fa-users"></i> Utilisateurs
         </a>
+        {% endif %}
     </nav>
 
     <div class="pi-sidebar-footer">
+        {% if role_principal %}
+            <div class="mb-2">
+                <span class="pi-badge {% if est_admin %}pi-badge-warning{% elif est_gestionnaire %}pi-badge-info{% else %}pi-badge-neutral{% endif %}" style="background:rgba(255,255,255,.08); color:#cbd0e6;">
+                    <i class="fa-solid fa-shield-halved"></i> {{ role_principal }}
+                </span>
+            </div>
+        {% endif %}
         <i class="fa-regular fa-circle-question"></i> Aide &amp; support
         <div class="mt-1" style="opacity:.7;">v1.0 — Gestion IT</div>
     </div>
