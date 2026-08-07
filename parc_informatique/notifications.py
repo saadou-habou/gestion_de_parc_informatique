@@ -27,9 +27,9 @@ def generer_notifications():
     # Toute notification active dont la clé n'est plus dans le lot calculé
     # ci-dessus correspond à un événement résolu (maintenance terminée,
     # appareil réintégré...).
-    Notification.objects.filter(resolue=False).exclude(cle_naturelle__in=cles_actives).update(
-        resolue=True, resolue_le=now()
-    )
+    Notification.objects.filter(resolue=False).exclude(
+        cle_naturelle__in=cles_actives
+    ).update(resolue=True, resolue_le=now())
 
 
 def _generer_maintenances_en_retard(cles_actives):
@@ -69,7 +69,9 @@ def _generer_appareils_obsoletes(cles_actives):
                 "type": "appareil_obsolete",
                 "niveau": "warning",
                 "message": f"« {appareil.nom} » est marqué obsolète",
-                "lien": reverse("parc_informatique:afficher_appareil", args=[appareil.id]),
+                "lien": reverse(
+                    "parc_informatique:afficher_appareil", args=[appareil.id]
+                ),
                 "appareil_id": appareil.id,
                 "resolue": False,
                 "resolue_le": None,

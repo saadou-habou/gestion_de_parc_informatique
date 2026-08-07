@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 
-from parc_informatique.models import Appareil, HistoriqueMaintenance, Local, Technicien, Utilisateur
+from parc_informatique.models import Appareil, HistoriqueMaintenance, Technicien
 
 
 class BootstrapFieldsMixin:
@@ -43,11 +43,13 @@ class BootstrapModelForm(BootstrapFieldsMixin, forms.ModelForm):
 
 class BootstrapAuthenticationForm(BootstrapFieldsMixin, AuthenticationForm):
     """Formulaire de connexion (django.contrib.auth) stylé Bootstrap."""
+
     pass
 
 
 class BootstrapPasswordChangeForm(BootstrapFieldsMixin, PasswordChangeForm):
     """Formulaire de changement de mot de passe, utilisé dans "Paramètres"."""
+
     pass
 
 
@@ -55,32 +57,34 @@ class AppareilForm(BootstrapModelForm):
     class Meta:
         model = Appareil
         fields = [
-            'nom',
-            'type',
-            'marque',
-            'modele',
-            'numero_serie',
-            'etat',
-            'date_acquisition',
-            'localisation',
-            'utilisateur',
+            "nom",
+            "type",
+            "marque",
+            "modele",
+            "numero_serie",
+            "etat",
+            "date_acquisition",
+            "localisation",
+            "utilisateur",
         ]
         labels = {
-            'nom': 'Nom',
-            'type': 'Type',
-            'marque': 'Marque',
-            'modele': 'Modèle',
-            'numero_serie': 'Numéro de série',
-            'etat': 'Etat',
-            'date_acquisition': "Date d'acquisition",
-            'localisation': 'Localisation',
-            'utilisateur': 'Utilisateur',
+            "nom": "Nom",
+            "type": "Type",
+            "marque": "Marque",
+            "modele": "Modèle",
+            "numero_serie": "Numéro de série",
+            "etat": "Etat",
+            "date_acquisition": "Date d'acquisition",
+            "localisation": "Localisation",
+            "utilisateur": "Utilisateur",
         }
         widgets = {
             "nom": forms.TextInput(attrs={"placeholder": "Ex. PC-Comptabilité-01"}),
             "marque": forms.TextInput(attrs={"placeholder": "Ex. Dell, HP, Lenovo…"}),
             "modele": forms.TextInput(attrs={"placeholder": "Ex. Latitude 5540"}),
-            "numero_serie": forms.TextInput(attrs={"placeholder": "Numéro de série constructeur"}),
+            "numero_serie": forms.TextInput(
+                attrs={"placeholder": "Numéro de série constructeur"}
+            ),
             "date_acquisition": forms.DateInput(attrs={"type": "date"}),
         }
 
@@ -88,8 +92,8 @@ class AppareilForm(BootstrapModelForm):
 class ModificationAppareilForm(BootstrapModelForm):
     class Meta:
         model = Appareil
-        fields = ['etat']
-        labels = {'etat': 'Etat'}
+        fields = ["etat"]
+        labels = {"etat": "Etat"}
 
 
 class HistoriqueMaintenanceForm(BootstrapModelForm):
@@ -105,7 +109,10 @@ class HistoriqueMaintenanceForm(BootstrapModelForm):
         widgets = {
             "date_intervention": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(
-                attrs={"rows": 4, "placeholder": "Expliquez pourquoi l'appareil nécessite une maintenance."}
+                attrs={
+                    "rows": 4,
+                    "placeholder": "Expliquez pourquoi l'appareil nécessite une maintenance.",
+                }
             ),
         }
 
@@ -117,8 +124,12 @@ class HistoriqueMaintenanceForm(BootstrapModelForm):
         # disparaître silencieusement du formulaire d'édition).
         queryset = Technicien.objects.filter(actif=True)
         if self.instance and self.instance.technicien_id:
-            queryset = queryset | Technicien.objects.filter(pk=self.instance.technicien_id)
-        self.fields["technicien"].queryset = queryset.distinct().order_by("nom", "prenom")
+            queryset = queryset | Technicien.objects.filter(
+                pk=self.instance.technicien_id
+            )
+        self.fields["technicien"].queryset = queryset.distinct().order_by(
+            "nom", "prenom"
+        )
         self.fields["technicien"].empty_label = "— Sélectionner un technicien —"
 
 
@@ -137,7 +148,9 @@ class TechnicienForm(BootstrapModelForm):
         widgets = {
             "nom": forms.TextInput(attrs={"placeholder": "Nom de famille"}),
             "prenom": forms.TextInput(attrs={"placeholder": "Prénom"}),
-            "specialite": forms.TextInput(attrs={"placeholder": "Ex. Hardware, Réseau, Logiciel…"}),
+            "specialite": forms.TextInput(
+                attrs={"placeholder": "Ex. Hardware, Réseau, Logiciel…"}
+            ),
         }
 
 

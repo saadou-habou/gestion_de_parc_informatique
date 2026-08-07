@@ -23,5 +23,7 @@ urlpatterns = [
     path(
         "parc_informatique/", include("parc_informatique.urls")
     ),  # Inclusion des routes de l'application
-    path("api/v1/", include("parc_informatique.api.urls")),
+    path(
+        "api/v1/", include("parc_informatique.api.urls")
+    ),  # Inclusion des routes pour l'authentification et les autorisations
 ]

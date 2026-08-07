@@ -37,9 +37,18 @@ class AppareilSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appareil
         fields = [
-            "id", "nom", "type", "marque", "modele", "numero_serie", "etat",
-            "date_acquisition", "localisation", "localisation_nom",
-            "utilisateur", "utilisateur_nom",
+            "id",
+            "nom",
+            "type",
+            "marque",
+            "modele",
+            "numero_serie",
+            "etat",
+            "date_acquisition",
+            "localisation",
+            "localisation_nom",
+            "utilisateur",
+            "utilisateur_nom",
         ]
 
     def get_utilisateur_nom(self, obj):
@@ -53,8 +62,14 @@ class HistoriqueMaintenanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoriqueMaintenance
         fields = [
-            "id", "appareil", "appareil_nom", "date_intervention", "description",
-            "technicien", "technicien_nom", "statut",
+            "id",
+            "appareil",
+            "appareil_nom",
+            "date_intervention",
+            "description",
+            "technicien",
+            "technicien_nom",
+            "statut",
         ]
         # La date est fixée côté serveur à la création (comme sur le site),
         # jamais choisie librement par le client de l'API.
@@ -65,6 +80,7 @@ class HistoriqueMaintenanceSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         from django.utils.timezone import now
+
         validated_data["date_intervention"] = now().date()
         maintenance = super().create(validated_data)
         # Même règle métier que envoyer_en_maintenance() côté site.
@@ -80,8 +96,16 @@ class HistoriqueAffectationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HistoriqueAffectation
-        fields = ["id", "appareil", "appareil_nom", "utilisateur", "utilisateur_nom", "date_debut", "date_fin"]
-        read_only_fields = fields  # historique en lecture seule via l'API pour l'instant
+        fields = [
+            "id",
+            "appareil",
+            "appareil_nom",
+            "utilisateur",
+            "utilisateur_nom",
+            "date_debut",
+            "date_fin",
+        ]
+        read_only_fields = fields  # historique en lecture seule via l'API
 
     def get_utilisateur_nom(self, obj):
         return str(obj.utilisateur) if obj.utilisateur_id else None
