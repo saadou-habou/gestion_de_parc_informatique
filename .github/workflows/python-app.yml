@@ -48,3 +48,5 @@ jobs:
 
       - name: Run tests
         run: uv run python manage.py test parc_informatique
+
+        
