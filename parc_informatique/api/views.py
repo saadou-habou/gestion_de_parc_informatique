@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.utils.timezone import now
+
 from parc_informatique.models import (
     Appareil,
     HistoriqueAffectation,
@@ -89,7 +91,8 @@ class HistoriqueMaintenanceViewSet(viewsets.ModelViewSet):
         """
         maintenance = self.get_object()
         maintenance.statut = "Réparé"
-        maintenance.save(update_fields=["statut"])
+        maintenance.date_reparation = now().date()
+        maintenance.save(update_fields=["statut", "date_reparation"])
 
         appareil = maintenance.appareil
         maintenances_ouvertes = HistoriqueMaintenance.objects.filter(

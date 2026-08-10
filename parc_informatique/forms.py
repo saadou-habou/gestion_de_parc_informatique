@@ -1,7 +1,13 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 
-from parc_informatique.models import Appareil, HistoriqueMaintenance, Technicien
+from parc_informatique.models import (
+    Appareil,
+    HistoriqueMaintenance,
+    Local,
+    Technicien,
+    Utilisateur,
+)
 
 
 class BootstrapFieldsMixin:
@@ -64,6 +70,9 @@ class AppareilForm(BootstrapModelForm):
             "numero_serie",
             "etat",
             "date_acquisition",
+            "fournisseur",
+            "prix_achat",
+            "date_fin_garantie",
             "localisation",
             "utilisateur",
         ]
@@ -75,6 +84,9 @@ class AppareilForm(BootstrapModelForm):
             "numero_serie": "Numéro de série",
             "etat": "Etat",
             "date_acquisition": "Date d'acquisition",
+            "fournisseur": "Fournisseur",
+            "prix_achat": "Prix d'achat (FCFA)",
+            "date_fin_garantie": "Fin de garantie",
             "localisation": "Localisation",
             "utilisateur": "Utilisateur",
         }
@@ -86,6 +98,13 @@ class AppareilForm(BootstrapModelForm):
                 attrs={"placeholder": "Numéro de série constructeur"}
             ),
             "date_acquisition": forms.DateInput(attrs={"type": "date"}),
+            "fournisseur": forms.TextInput(
+                attrs={"placeholder": "Ex. Grosbill, CDiscount Pro…"}
+            ),
+            "prix_achat": forms.NumberInput(
+                attrs={"step": "0.01", "placeholder": "0.00"}
+            ),
+            "date_fin_garantie": forms.DateInput(attrs={"type": "date"}),
         }
 
 
@@ -99,12 +118,13 @@ class ModificationAppareilForm(BootstrapModelForm):
 class HistoriqueMaintenanceForm(BootstrapModelForm):
     class Meta:
         model = HistoriqueMaintenance
-        fields = ["date_intervention", "description", "technicien", "statut"]
+        fields = ["date_intervention", "description", "technicien", "statut", "cout"]
         labels = {
             "date_intervention": "Date d'intervention",
             "description": "Description du problème ou de la maintenance",
             "technicien": "Technicien",
             "statut": "Statut",
+            "cout": "Coût (FCFA, optionnel)",
         }
         widgets = {
             "date_intervention": forms.DateInput(attrs={"type": "date"}),
@@ -114,6 +134,7 @@ class HistoriqueMaintenanceForm(BootstrapModelForm):
                     "placeholder": "Expliquez pourquoi l'appareil nécessite une maintenance.",
                 }
             ),
+            "cout": forms.NumberInput(attrs={"step": "0.01", "placeholder": "0.00"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -136,7 +157,15 @@ class HistoriqueMaintenanceForm(BootstrapModelForm):
 class TechnicienForm(BootstrapModelForm):
     class Meta:
         model = Technicien
-        fields = ["nom", "prenom", "email", "telephone", "specialite", "actif"]
+        fields = [
+            "nom",
+            "prenom",
+            "email",
+            "telephone",
+            "specialite",
+            "actif",
+            "compte_utilisateur",
+        ]
         labels = {
             "nom": "Nom",
             "prenom": "Prénom",
@@ -144,6 +173,7 @@ class TechnicienForm(BootstrapModelForm):
             "telephone": "Téléphone",
             "specialite": "Spécialité",
             "actif": "Technicien actif",
+            "compte_utilisateur": "Compte de connexion associé",
         }
         widgets = {
             "nom": forms.TextInput(attrs={"placeholder": "Nom de famille"}),
@@ -152,6 +182,15 @@ class TechnicienForm(BootstrapModelForm):
                 attrs={"placeholder": "Ex. Hardware, Réseau, Logiciel…"}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["compte_utilisateur"].required = False
+        self.fields["compte_utilisateur"].empty_label = "— Aucun compte associé —"
+        self.fields["compte_utilisateur"].help_text = (
+            "Optionnel : permet à ce technicien de voir ses propres "
+            'interventions une fois connecté ("Mes interventions").'
+        )
 
 
 class AffectationForm(BootstrapModelForm):
@@ -165,3 +204,61 @@ class AffectationForm(BootstrapModelForm):
         help_texts = {
             "utilisateur": "Laissez vide pour retirer l'appareil à son utilisateur actuel.",
         }
+
+
+class UtilisateurForm(BootstrapModelForm):
+    class Meta:
+        model = Utilisateur
+        fields = ["nom", "prenom", "email", "telephone", "poste"]
+        labels = {
+            "nom": "Nom",
+            "prenom": "Prénom",
+            "email": "Email",
+            "telephone": "Téléphone",
+            "poste": "Poste",
+        }
+        widgets = {
+            "nom": forms.TextInput(attrs={"placeholder": "Nom de famille"}),
+            "prenom": forms.TextInput(attrs={"placeholder": "Prénom"}),
+            "poste": forms.TextInput(
+                attrs={"placeholder": "Ex. Comptable, Chef de projet…"}
+            ),
+        }
+
+
+class LocalForm(BootstrapModelForm):
+    class Meta:
+        model = Local
+        fields = ["nom", "batiment", "etage"]
+        labels = {
+            "nom": "Nom du local",
+            "batiment": "Bâtiment",
+            "etage": "Étage",
+        }
+        widgets = {
+            "nom": forms.TextInput(
+                attrs={"placeholder": "Ex. Salle serveur, Bureau 204…"}
+            ),
+            "batiment": forms.TextInput(attrs={"placeholder": "Ex. Bâtiment A"}),
+            "etage": forms.TextInput(attrs={"placeholder": "Ex. RDC, 2e étage…"}),
+        }
+
+
+class ImporterAppareilsForm(forms.Form):
+    """Import en masse d'appareils depuis un fichier CSV."""
+
+    fichier = forms.FileField(
+        label="Fichier CSV",
+        help_text=(
+            "Colonnes attendues : nom, type, marque, modele, numero_serie, etat, "
+            "date_acquisition (AAAA-MM-JJ), fournisseur, prix_achat, date_fin_garantie "
+            "(AAAA-MM-JJ), localisation (nom exact d'un local existant), "
+            "utilisateur (email exact d'un utilisateur existant). "
+            "Seules nom, type et numero_serie sont obligatoires."
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["fichier"].widget.attrs["class"] = "form-control"
+        self.fields["fichier"].widget.attrs["accept"] = ".csv"

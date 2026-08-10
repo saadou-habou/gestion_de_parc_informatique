@@ -43,6 +43,9 @@
                     <i class="fa-solid fa-right-to-bracket"></i> Se connecter
                 </button>
             </form>
+            <div class="text-center mt-3">
+                <a href="{% url 'parc_informatique:password_reset' %}" style="font-size:.85rem;">Mot de passe oublié ?</a>
+            </div>
         </div>
     </div>
 </div>
@@ -51,6 +54,7 @@
     <div class="pi-spinner"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="{% static 'parc_informatique/js/main.js' %}"></script>
 </body>
 </html>

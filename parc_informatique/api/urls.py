@@ -1,4 +1,5 @@
 from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -24,6 +25,10 @@ urlpatterns = [
 
     # Identité de l'utilisateur connecté (id, email, rôles)
     path("moi/", views.MoiView.as_view(), name="api_moi"),
+
+    # Documentation interactive (schéma OpenAPI + interface Swagger)
+    path("schema/", SpectacularAPIView.as_view(), name="api_schema"),
+    path("docs/", SpectacularSwaggerView.as_view(url_name="api_schema"), name="api_docs"),
 
     # Ressources métier (CRUD via le routeur DRF)
     path("", include(router.urls)),

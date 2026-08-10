@@ -364,3 +364,15 @@ table.pi-table tbody tr:last-child td { border-bottom: none; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ---------- SweetAlert2 : alignement sur la charte graphique ---------- */
+.swal2-popup {
+  font-family: 'Inter', sans-serif !important;
+  border-radius: var(--pi-radius) !important;
+}
+.swal2-title { font-family: 'Sora', 'Inter', sans-serif !important; font-size: 1.2rem !important; }
+.swal2-html-container { font-size: .9rem !important; }
+.swal2-styled.swal2-confirm { border-radius: var(--pi-radius-sm) !important; font-weight: 600 !important; }
+.swal2-styled.swal2-cancel { border-radius: var(--pi-radius-sm) !important; font-weight: 600 !important; }
+.swal2-toast { border-radius: var(--pi-radius-sm) !important; box-shadow: var(--pi-shadow-md) !important; }
+.swal2-toast .swal2-title { font-size: .88rem !important; }

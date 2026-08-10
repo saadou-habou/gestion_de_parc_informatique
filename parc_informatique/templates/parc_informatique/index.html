@@ -9,9 +9,17 @@
         <p>{{ total_appareils }} appareil{{ total_appareils|pluralize }} enregistré{{ total_appareils|pluralize }}</p>
     </div>
     {% if est_gestionnaire %}
-    <a href="{% url 'parc_informatique:ajouter_appareil' %}" class="btn btn-pi-primary d-flex align-items-center gap-2">
-        <i class="fa-solid fa-plus"></i> Ajouter un appareil
-    </a>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'parc_informatique:export_appareils_csv' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-file-csv"></i> Exporter
+        </a>
+        <a href="{% url 'parc_informatique:importer_appareils' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-file-import"></i> Importer
+        </a>
+        <a href="{% url 'parc_informatique:ajouter_appareil' %}" class="btn btn-pi-primary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-plus"></i> Ajouter un appareil
+        </a>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

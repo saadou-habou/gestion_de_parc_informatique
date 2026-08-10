@@ -38,6 +38,30 @@
            class="pi-nav-link {% if request.resolver_match.url_name == 'liste_utilisateurs' or request.resolver_match.url_name == 'profil_utilisateur' %}active{% endif %}">
             <i class="fa-solid fa-users"></i> Utilisateurs
         </a>
+        <a href="{% url 'parc_informatique:liste_locaux' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'liste_locaux' %}active{% endif %}">
+            <i class="fa-solid fa-building"></i> Locaux
+        </a>
+        {% endif %}
+        {% if request.user.profil_technicien %}
+        <a href="{% url 'parc_informatique:mes_interventions' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'mes_interventions' %}active{% endif %}">
+            <i class="fa-solid fa-user-clock"></i> Mes interventions
+        </a>
+        {% endif %}
+
+        {% if est_gestionnaire %}
+        <div class="pi-nav-section-label">Pilotage</div>
+        <a href="{% url 'parc_informatique:statistiques' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'statistiques' %}active{% endif %}">
+            <i class="fa-solid fa-chart-line"></i> Statistiques
+        </a>
+        {% endif %}
+        {% if est_admin %}
+        <a href="{% url 'parc_informatique:liste_journal_audit' %}"
+           class="pi-nav-link {% if request.resolver_match.url_name == 'liste_journal_audit' %}active{% endif %}">
+            <i class="fa-solid fa-clipboard-list"></i> Journal d'audit
+        </a>
         {% endif %}
     </nav>
 

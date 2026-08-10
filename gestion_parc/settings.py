@@ -33,6 +33,8 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     "parc_informatique",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -49,6 +51,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 # Configuration de JWT
@@ -74,6 +77,11 @@ MIDDLEWARE = [
 
 LOGIN_URL = "parc_informatique:login"
 LOGIN_REDIRECT_URL = "parc_informatique:dashboard"
+
+# En dev, le backend console suffit (les emails s’affichent
+# dans le terminal au lieu d’être vraiment envoyés) :
+# En prod, configurez un vrai backend SMTP (EMAIL_HOST, EMAIL_HOST_USER, etc.)
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 ROOT_URLCONF = "gestion_parc.urls"
 

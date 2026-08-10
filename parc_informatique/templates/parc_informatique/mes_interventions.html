@@ -1,0 +1,71 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Mes interventions — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-page-header">
+    <div>
+        <h1>Mes interventions</h1>
+        <p>{{ technicien }} — {{ total_maintenances }} intervention{{ total_maintenances|pluralize }}, dont {{ maintenances_en_cours }} en cours</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card">
+    <div class="pi-table-wrap">
+        <table class="pi-table mb-0">
+            <thead>
+                <tr>
+                    <th>Appareil</th>
+                    <th>Date d'intervention</th>
+                    <th>Description</th>
+                    <th>Statut</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for maintenance in maintenances %}
+                <tr>
+                    <td>
+                        <a href="{% url 'parc_informatique:afficher_appareil' maintenance.appareil.id %}" class="fw-semibold text-decoration-none">
+                            {{ maintenance.appareil.nom }}
+                        </a>
+                    </td>
+                    <td>{{ maintenance.date_intervention }}</td>
+                    <td class="text-muted" style="max-width:300px;">{{ maintenance.description|truncatechars:80 }}</td>
+                    <td>
+                        {% if maintenance.statut == "Réparé" %}
+                            <span class="pi-badge pi-badge-success">Réparé</span>
+                        {% else %}
+                            <span class="pi-badge pi-badge-danger">Non réparé</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if maintenance.statut != "Réparé" %}
+                        <form method="post" action="{% url 'parc_informatique:terminer_maintenance' maintenance.id %}" data-pi-loading>
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit" class="btn btn-outline-success btn-sm" data-pi-confirm="Marquer cette intervention comme terminée ?">
+                                <i class="fa-solid fa-check"></i> Terminer
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">
+                        <div class="pi-empty">
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                            Aucune intervention ne vous est encore assignée.
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "parc_informatique/include/pagination.html" %}
+</div>
+{% endblock %}

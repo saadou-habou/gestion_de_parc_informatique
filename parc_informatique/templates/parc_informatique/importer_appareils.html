@@ -1,0 +1,51 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Importer des appareils — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-breadcrumb"><a href="{% url 'parc_informatique:index' %}">Appareils</a> / Importer</div>
+<div class="pi-page-header">
+    <div>
+        <h1>Importer des appareils (CSV)</h1>
+        <p>Intégrez d'un coup un parc existant.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pi-card" style="max-width: 720px;">
+    <div class="pi-card-body">
+        <form method="post" enctype="multipart/form-data" class="pi-form" data-pi-loading novalidate>
+            {% csrf_token %}
+            {% include "parc_informatique/include/form_fields.html" %}
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-pi-primary d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-file-import"></i> Importer
+                </button>
+                <a href="{% url 'parc_informatique:index' %}" class="btn btn-light">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if resultat %}
+<div class="pi-card mt-3" style="max-width: 720px;">
+    <div class="pi-card-header"><h5>Résultat de l'import</h5></div>
+    <div class="pi-card-body">
+        <p class="mb-3">
+            <span class="pi-badge pi-badge-success">{{ resultat.crees }} appareil{{ resultat.crees|pluralize }} créé{{ resultat.crees|pluralize }}</span>
+            {% if resultat.erreurs %}
+                <span class="pi-badge pi-badge-danger ms-2">{{ resultat.erreurs|length }} ligne{{ resultat.erreurs|pluralize }} ignorée{{ resultat.erreurs|pluralize }}</span>
+            {% endif %}
+        </p>
+        {% if resultat.erreurs %}
+        <ul class="mb-0" style="font-size:.85rem;">
+            {% for erreur in resultat.erreurs %}
+            <li class="text-danger">{{ erreur }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

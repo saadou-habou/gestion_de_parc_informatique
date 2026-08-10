@@ -44,12 +44,31 @@
                     <div><div class="text-muted" style="font-size:.78rem;">Numéro de série</div><div class="fw-semibold"><code>{{ appareil.numero_serie }}</code></div></div>
                     <div><div class="text-muted" style="font-size:.78rem;">Date d'acquisition</div><div class="fw-semibold">{{ appareil.date_acquisition|default:"—" }}</div></div>
                     <div><div class="text-muted" style="font-size:.78rem;">Utilisateur affecté</div><div class="fw-semibold">{{ appareil.utilisateur|default:"Non affecté" }}</div></div>
+                    <div><div class="text-muted" style="font-size:.78rem;">Fournisseur</div><div class="fw-semibold">{{ appareil.fournisseur|default:"—" }}</div></div>
+                    <div><div class="text-muted" style="font-size:.78rem;">Prix d'achat</div><div class="fw-semibold">{% if appareil.prix_achat %}{{ appareil.prix_achat }} FCFA{% else %}—{% endif %}</div></div>
+                    <div>
+                        <div class="text-muted" style="font-size:.78rem;">Fin de garantie</div>
+                        <div class="fw-semibold">
+                            {% if appareil.date_fin_garantie %}
+                                {{ appareil.date_fin_garantie }}
+                                {% if appareil.garantie_expiree %}<span class="pi-badge pi-badge-danger ms-1">Expirée</span>{% endif %}
+                            {% else %}—{% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="col-lg-4">
+        <div class="pi-card mb-3">
+            <div class="pi-card-header"><h5>QR code</h5></div>
+            <div class="pi-card-body text-center">
+                <img src="{% url 'parc_informatique:qr_code_appareil' appareil.id %}" alt="QR code de {{ appareil.nom }}" width="150" height="150">
+                <p class="text-muted mt-2 mb-0" style="font-size:.78rem;">Scanner pour ouvrir cette fiche depuis un mobile.</p>
+            </div>
+        </div>
+
         <div class="pi-card mb-3">
             <div class="pi-card-header"><h5>Localisation</h5></div>
             <div class="pi-card-body">

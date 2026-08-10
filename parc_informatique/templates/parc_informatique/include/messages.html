@@ -1,29 +1,35 @@
 {% if messages %}
-<div class="pi-messages mb-3">
-    {% for message in messages %}
-        {% if message.tags == 'error' or message.tags == 'danger' %}
-            {% with icon="fa-circle-exclamation" bs_class="danger" %}
-            <div class="alert alert-{{ bs_class }} d-flex align-items-center gap-2 pi-alert shadow-sm" data-pi-autohide role="alert">
-                <i class="fa-solid {{ icon }}"></i> <div>{{ message }}</div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Fermer"></button>
-            </div>
-            {% endwith %}
-        {% elif message.tags == 'success' %}
-            <div class="alert alert-success d-flex align-items-center gap-2 pi-alert shadow-sm" data-pi-autohide role="alert">
-                <i class="fa-solid fa-circle-check"></i> <div>{{ message }}</div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Fermer"></button>
-            </div>
-        {% elif message.tags == 'warning' %}
-            <div class="alert alert-warning d-flex align-items-center gap-2 pi-alert shadow-sm" data-pi-autohide role="alert">
-                <i class="fa-solid fa-triangle-exclamation"></i> <div>{{ message }}</div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Fermer"></button>
-            </div>
-        {% else %}
-            <div class="alert alert-info d-flex align-items-center gap-2 pi-alert shadow-sm" data-pi-autohide role="alert">
-                <i class="fa-solid fa-circle-info"></i> <div>{{ message }}</div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Fermer"></button>
-            </div>
-        {% endif %}
-    {% endfor %}
-</div>
+<!-- Repli accessible si JS désactivé (SweetAlert2 nécessite du JS) -->
+<noscript>
+    <div class="pi-messages mb-3">
+        {% for message in messages %}
+            {% if message.tags == 'error' or message.tags == 'danger' %}
+                <div class="alert alert-danger d-flex align-items-center gap-2 shadow-sm" role="alert">
+                    <i class="fa-solid fa-circle-exclamation"></i> <div>{{ message }}</div>
+                </div>
+            {% elif message.tags == 'success' %}
+                <div class="alert alert-success d-flex align-items-center gap-2 shadow-sm" role="alert">
+                    <i class="fa-solid fa-circle-check"></i> <div>{{ message }}</div>
+                </div>
+            {% elif message.tags == 'warning' %}
+                <div class="alert alert-warning d-flex align-items-center gap-2 shadow-sm" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <div>{{ message }}</div>
+                </div>
+            {% else %}
+                <div class="alert alert-info d-flex align-items-center gap-2 shadow-sm" role="alert">
+                    <i class="fa-solid fa-circle-info"></i> <div>{{ message }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</noscript>
+
+<!-- Version JS : affichées en toasts SweetAlert2 par main.js -->
+<script>
+    window.piDjangoMessages = [
+        {% for message in messages %}
+        { tag: "{{ message.tags|default:'info' }}", text: "{{ message|escapejs }}" }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+</script>
 {% endif %}

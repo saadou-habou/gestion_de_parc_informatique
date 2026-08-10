@@ -25,7 +25,7 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 class TechnicienSerializer(serializers.ModelSerializer):
     class Meta:
         model = Technicien
-        fields = ["id", "nom", "prenom", "email", "telephone", "specialite", "actif"]
+        fields = ["id", "nom", "prenom", "email", "telephone", "specialite", "actif", "compte_utilisateur"]
 
 
 class AppareilSerializer(serializers.ModelSerializer):
@@ -33,22 +33,15 @@ class AppareilSerializer(serializers.ModelSerializer):
         source="localisation.nom", read_only=True, default=None
     )
     utilisateur_nom = serializers.SerializerMethodField()
+    garantie_expiree = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Appareil
         fields = [
-            "id",
-            "nom",
-            "type",
-            "marque",
-            "modele",
-            "numero_serie",
-            "etat",
-            "date_acquisition",
-            "localisation",
-            "localisation_nom",
-            "utilisateur",
-            "utilisateur_nom",
+            "id", "nom", "type", "marque", "modele", "numero_serie", "etat",
+            "date_acquisition", "fournisseur", "prix_achat", "date_fin_garantie",
+            "garantie_expiree", "localisation", "localisation_nom",
+            "utilisateur", "utilisateur_nom",
         ]
 
     def get_utilisateur_nom(self, obj):
@@ -62,25 +55,18 @@ class HistoriqueMaintenanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoriqueMaintenance
         fields = [
-            "id",
-            "appareil",
-            "appareil_nom",
-            "date_intervention",
-            "description",
-            "technicien",
-            "technicien_nom",
-            "statut",
+            "id", "appareil", "appareil_nom", "date_intervention", "date_reparation",
+            "description", "technicien", "technicien_nom", "statut", "cout",
         ]
-        # La date est fixée côté serveur à la création (comme sur le site),
-        # jamais choisie librement par le client de l'API.
-        read_only_fields = ["date_intervention"]
+        # La date d'intervention est fixée côté serveur à la création (comme sur
+        # le site) ; date_reparation n'est renseignée que par l'action "terminer".
+        read_only_fields = ["date_intervention", "date_reparation"]
 
     def get_technicien_nom(self, obj):
         return str(obj.technicien) if obj.technicien_id else None
 
     def create(self, validated_data):
         from django.utils.timezone import now
-
         validated_data["date_intervention"] = now().date()
         maintenance = super().create(validated_data)
         # Même règle métier que envoyer_en_maintenance() côté site.
@@ -96,16 +82,8 @@ class HistoriqueAffectationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HistoriqueAffectation
-        fields = [
-            "id",
-            "appareil",
-            "appareil_nom",
-            "utilisateur",
-            "utilisateur_nom",
-            "date_debut",
-            "date_fin",
-        ]
-        read_only_fields = fields  # historique en lecture seule via l'API
+        fields = ["id", "appareil", "appareil_nom", "utilisateur", "utilisateur_nom", "date_debut", "date_fin"]
+        read_only_fields = fields  # historique en lecture seule via l'API pour l'instant
 
     def get_utilisateur_nom(self, obj):
         return str(obj.utilisateur) if obj.utilisateur_id else None

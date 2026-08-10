@@ -16,9 +16,16 @@
             <p>{{ utilisateur.poste|default:"Poste non renseigné" }}</p>
         </div>
     </div>
-    <a href="{% url 'parc_informatique:liste_utilisateurs' %}" class="btn btn-light d-flex align-items-center gap-2">
-        <i class="fa-solid fa-arrow-left"></i> Retour à la liste
-    </a>
+    <div class="d-flex gap-2">
+        {% if est_gestionnaire %}
+        <a href="{% url 'parc_informatique:modifier_utilisateur' utilisateur.id %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-pen"></i> Modifier
+        </a>
+        {% endif %}
+        <a href="{% url 'parc_informatique:liste_utilisateurs' %}" class="btn btn-light d-flex align-items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
 </div>
 {% endblock %}
 

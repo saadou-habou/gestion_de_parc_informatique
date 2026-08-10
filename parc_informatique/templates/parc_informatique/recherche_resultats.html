@@ -1,0 +1,90 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Recherche — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-page-header">
+    <div>
+        <h1>Résultats pour « {{ terme }} »</h1>
+        <p>{{ total_resultats }} résultat{{ total_resultats|pluralize }}</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if not terme %}
+<div class="pi-empty">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    Saisissez un terme dans la barre de recherche en haut de la page.
+</div>
+{% elif total_resultats == 0 %}
+<div class="pi-empty">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    Aucun résultat pour « {{ terme }} ».
+</div>
+{% else %}
+
+{% if resultats.appareils %}
+<div class="pi-card mb-3">
+    <div class="pi-card-header"><h5>Appareils ({{ resultats.appareils|length }})</h5></div>
+    <div class="pi-table-wrap">
+        <table class="pi-table mb-0">
+            <thead><tr><th>Nom</th><th>Marque / Modèle</th><th>N° de série</th><th>État</th></tr></thead>
+            <tbody>
+                {% for a in resultats.appareils %}
+                <tr>
+                    <td><a href="{% url 'parc_informatique:afficher_appareil' a.id %}" class="fw-semibold text-decoration-none">{{ a.nom }}</a></td>
+                    <td>{{ a.marque }} {{ a.modele }}</td>
+                    <td><code>{{ a.numero_serie }}</code></td>
+                    <td>{{ a.etat }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if resultats.utilisateurs %}
+<div class="pi-card mb-3">
+    <div class="pi-card-header"><h5>Utilisateurs ({{ resultats.utilisateurs|length }})</h5></div>
+    <div class="pi-table-wrap">
+        <table class="pi-table mb-0">
+            <thead><tr><th>Nom</th><th>Email</th><th>Poste</th></tr></thead>
+            <tbody>
+                {% for u in resultats.utilisateurs %}
+                <tr>
+                    <td><a href="{% url 'parc_informatique:profil_utilisateur' u.id %}" class="fw-semibold text-decoration-none">{{ u.nom }} {{ u.prenom }}</a></td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.poste|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if resultats.techniciens %}
+<div class="pi-card mb-3">
+    <div class="pi-card-header"><h5>Techniciens ({{ resultats.techniciens|length }})</h5></div>
+    <div class="pi-table-wrap">
+        <table class="pi-table mb-0">
+            <thead><tr><th>Nom</th><th>Spécialité</th><th>Statut</th></tr></thead>
+            <tbody>
+                {% for t in resultats.techniciens %}
+                <tr>
+                    <td class="fw-semibold">{{ t.nom }} {{ t.prenom }}</td>
+                    <td>{{ t.specialite|default:"—" }}</td>
+                    <td>{% if t.actif %}<span class="pi-badge pi-badge-success">Actif</span>{% else %}<span class="pi-badge pi-badge-neutral">Inactif</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

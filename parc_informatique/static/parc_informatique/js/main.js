@@ -1,8 +1,9 @@
 /**
- * PARC INFORMATIQUE — comportements front (vanilla JS, sans dépendance).
+ * PARC INFORMATIQUE — comportements front (vanilla JS + SweetAlert2).
  * - Recherche instantanée dans les tableaux (data-pi-table)
  * - Filtres par statut (data-pi-filter)
- * - Confirmation avant suppression
+ * - Confirmation avant action sensible (SweetAlert2, repli sur window.confirm)
+ * - Messages Django affichés en toasts SweetAlert2 (voir window.piDjangoMessages)
  * - Loader plein écran lors des soumissions de formulaire
  * - Ouverture/fermeture de la sidebar sur mobile
  */
@@ -60,16 +61,85 @@ document.addEventListener('DOMContentLoaded', function () {
     if (emptyRow) emptyRow.style.display = visibleRows.length === 0 ? '' : 'none';
   }
 
-  /* ---- Confirmation avant suppression ---- */
+  /* ---- Confirmation avant suppression (SweetAlert2) ---- */
   document.querySelectorAll('[data-pi-confirm]').forEach(function (el) {
     el.addEventListener('click', function (e) {
-      var msg = el.getAttribute('data-pi-confirm') || 'Confirmer cette action ?';
-      if (!window.confirm(msg)) {
-        e.preventDefault();
-        e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
+
+      var message = el.getAttribute('data-pi-confirm') || 'Confirmer cette action ?';
+
+      function executer() {
+        if (el.tagName === 'A' && el.href) {
+          window.location.href = el.href;
+        } else if (el.form) {
+          // requestSubmit() (contrairement à submit()) déclenche l'événement
+          // 'submit' du formulaire, nécessaire pour que le loader plein
+          // écran (data-pi-loading) s'affiche bien après confirmation.
+          if (el.form.requestSubmit) {
+            el.form.requestSubmit();
+          } else {
+            el.form.submit();
+          }
+        } else if (el.closest('form')) {
+          var form = el.closest('form');
+          if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
+        }
       }
+
+      // Repli sur window.confirm si SweetAlert2 n'a pas pu se charger (CDN bloqué).
+      if (!window.Swal) {
+        if (window.confirm(message)) executer();
+        return;
+      }
+
+      var estDestructif = el.classList.contains('btn-danger') || el.classList.contains('danger');
+
+      Swal.fire({
+        title: 'Confirmation',
+        text: message,
+        icon: estDestructif ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonText: estDestructif ? 'Oui, supprimer' : 'Confirmer',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: estDestructif ? '#dc2626' : '#4f46e5',
+        cancelButtonColor: '#6b7280',
+        reverseButtons: true,
+        focusCancel: estDestructif,
+        buttonsStyling: true,
+      }).then(function (result) {
+        if (result.isConfirmed) executer();
+      });
     });
   });
+
+  /* ---- Messages Django en toasts SweetAlert2 ---- */
+  if (window.piDjangoMessages && window.piDjangoMessages.length && window.Swal) {
+    var toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 4500,
+      timerProgressBar: true,
+      didOpen: function (el) {
+        el.addEventListener('mouseenter', Swal.stopTimer);
+        el.addEventListener('mouseleave', Swal.resumeTimer);
+      },
+    });
+
+    var iconPour = function (tag) {
+      if (tag.indexOf('error') !== -1 || tag.indexOf('danger') !== -1) return 'error';
+      if (tag.indexOf('success') !== -1) return 'success';
+      if (tag.indexOf('warning') !== -1) return 'warning';
+      return 'info';
+    };
+
+    window.piDjangoMessages.forEach(function (msg, index) {
+      setTimeout(function () {
+        toast.fire({ icon: iconPour(msg.tag), title: msg.text });
+      }, index * 350);
+    });
+  }
 
   /* ---- Loader lors des soumissions de formulaire ---- */
   var overlay = document.querySelector('.pi-loading-overlay');
@@ -77,14 +147,6 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function () {
       if (overlay) overlay.classList.add('active');
     });
-  });
-
-  /* ---- Fermeture auto des alertes Django messages ---- */
-  document.querySelectorAll('.pi-alert[data-pi-autohide]').forEach(function (alertEl) {
-    setTimeout(function () {
-      alertEl.classList.add('pi-fade-out');
-      setTimeout(function () { alertEl.remove(); }, 400);
-    }, 4500);
   });
 
 });

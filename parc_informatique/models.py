@@ -36,6 +36,15 @@ class Technicien(models.Model):
         help_text="Un technicien inactif n'apparaît plus dans les nouveaux formulaires "
                    "de maintenance, mais son historique d'interventions est conservé.",
     )
+    compte_utilisateur = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="profil_technicien",
+        help_text="Optionnel : relie ce technicien à un compte de connexion, "
+                   "pour lui donner accès à 'Mes interventions'.",
+    )
 
     class Meta:
         ordering = ["nom", "prenom"]
@@ -64,6 +73,11 @@ class Appareil(models.Model):
     numero_serie = models.CharField(max_length=100, unique=True)
     etat = models.CharField(max_length=50, choices=ETAT_CHOICES, default="Disponible")
     date_acquisition = models.DateField(blank=True, null=True)
+    fournisseur = models.CharField(max_length=150, blank=True)
+    prix_achat = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    date_fin_garantie = models.DateField(
+        null=True, blank=True, help_text="Utilisée pour l'alerte 'garantie bientôt expirée'."
+    )
     localisation = models.ForeignKey(
         Local, on_delete=models.SET_NULL, null=True, related_name="appareils"
     )
@@ -78,6 +92,10 @@ class Appareil(models.Model):
     def __str__(self):
         return f"{self.nom} ({self.marque} {self.modele})"
 
+    @property
+    def garantie_expiree(self):
+        return bool(self.date_fin_garantie and self.date_fin_garantie < timezone.now().date())
+
 
 class HistoriqueMaintenance(models.Model):
     STATUT_CHOICES = [
@@ -89,6 +107,10 @@ class HistoriqueMaintenance(models.Model):
         Appareil, on_delete=models.CASCADE, related_name="maintenances"
     )
     date_intervention = models.DateField()
+    date_reparation = models.DateField(
+        null=True, blank=True,
+        help_text="Renseignée automatiquement quand l'intervention est marquée 'Terminer'.",
+    )
     description = models.TextField()
     technicien = models.ForeignKey(
         Technicien,
@@ -98,9 +120,19 @@ class HistoriqueMaintenance(models.Model):
         related_name="maintenances",
     )
     statut = models.CharField(max_length=50, choices=STATUT_CHOICES, default="Réparé")
+    cout = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Coût de l'intervention (pièces + main d'œuvre), pour les statistiques.",
+    )
 
     def __str__(self):
         return f"Maintenance de {self.appareil.nom} le {self.date_intervention}"
+
+    @property
+    def duree_jours(self):
+        if self.date_reparation:
+            return (self.date_reparation - self.date_intervention).days
+        return None
 
 
 class HistoriqueAffectation(models.Model):
@@ -149,6 +181,7 @@ class Notification(models.Model):
     TYPE_CHOICES = [
         ("maintenance_retard", "Maintenance en retard"),
         ("appareil_obsolete", "Appareil obsolète"),
+        ("garantie_expiration", "Garantie bientôt expirée / expirée"),
     ]
     NIVEAU_CHOICES = [
         ("info", "Info"),
@@ -176,3 +209,38 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.message
+
+
+class JournalAudit(models.Model):
+    """
+    Journal des actions sensibles (créations, modifications, suppressions,
+    changements d'affectation, fin de maintenance...). Alimenté
+    explicitement depuis les vues concernées (voir parc_informatique/audit.py
+    → `journaliser()`), jamais généré automatiquement par des signaux — plus
+    prévisible sur ce qui est réellement tracé.
+    """
+
+    ACTION_CHOICES = [
+        ("creation", "Création"),
+        ("modification", "Modification"),
+        ("suppression", "Suppression"),
+        ("action", "Action métier"),
+    ]
+
+    horodatage = models.DateTimeField(auto_now_add=True)
+    utilisateur = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="actions_journal"
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    modele = models.CharField(max_length=100, help_text="Ex. Appareil, Technicien, Utilisateur…")
+    objet_repr = models.CharField(max_length=255, help_text="Représentation texte de l'objet concerné.")
+    details = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["-horodatage"]
+        verbose_name = "Entrée du journal d'audit"
+        verbose_name_plural = "Journal d'audit"
+
+    def __str__(self):
+        qui = self.utilisateur or "Système"
+        return f"[{self.horodatage:%d/%m/%Y %H:%M}] {qui} — {self.get_action_display()} {self.modele} « {self.objet_repr} »"

@@ -17,19 +17,23 @@ from parc_informatique.models import Appareil, HistoriqueMaintenance, Notificati
 # Nombre de jours au-delà desquels une maintenance "Non réparé" déclenche une alerte.
 MAINTENANCE_RETARD_JOURS = 3
 
+# Nombre de jours avant expiration de garantie à partir duquel on alerte.
+GARANTIE_ALERTE_JOURS = 30
+
 
 def generer_notifications():
     cles_actives = set()
 
     _generer_maintenances_en_retard(cles_actives)
     _generer_appareils_obsoletes(cles_actives)
+    _generer_garanties_expirant(cles_actives)
 
     # Toute notification active dont la clé n'est plus dans le lot calculé
     # ci-dessus correspond à un événement résolu (maintenance terminée,
     # appareil réintégré...).
-    Notification.objects.filter(resolue=False).exclude(
-        cle_naturelle__in=cles_actives
-    ).update(resolue=True, resolue_le=now())
+    Notification.objects.filter(resolue=False).exclude(cle_naturelle__in=cles_actives).update(
+        resolue=True, resolue_le=now()
+    )
 
 
 def _generer_maintenances_en_retard(cles_actives):
@@ -69,9 +73,37 @@ def _generer_appareils_obsoletes(cles_actives):
                 "type": "appareil_obsolete",
                 "niveau": "warning",
                 "message": f"« {appareil.nom} » est marqué obsolète",
-                "lien": reverse(
-                    "parc_informatique:afficher_appareil", args=[appareil.id]
-                ),
+                "lien": reverse("parc_informatique:afficher_appareil", args=[appareil.id]),
+                "appareil_id": appareil.id,
+                "resolue": False,
+                "resolue_le": None,
+            },
+        )
+
+
+def _generer_garanties_expirant(cles_actives):
+    seuil = now().date() + timedelta(days=GARANTIE_ALERTE_JOURS)
+    appareils = Appareil.objects.filter(
+        date_fin_garantie__isnull=False, date_fin_garantie__lte=seuil
+    )
+
+    for appareil in appareils:
+        cle = f"garantie_expiration:{appareil.id}"
+        cles_actives.add(cle)
+        if appareil.date_fin_garantie < now().date():
+            message = f"Garantie de « {appareil.nom} » expirée depuis le {appareil.date_fin_garantie:%d/%m/%Y}"
+            niveau = "danger"
+        else:
+            message = f"Garantie de « {appareil.nom} » expire le {appareil.date_fin_garantie:%d/%m/%Y}"
+            niveau = "warning"
+
+        Notification.objects.update_or_create(
+            cle_naturelle=cle,
+            defaults={
+                "type": "garantie_expiration",
+                "niveau": niveau,
+                "message": message,
+                "lien": reverse("parc_informatique:afficher_appareil", args=[appareil.id]),
                 "appareil_id": appareil.id,
                 "resolue": False,
                 "resolue_le": None,

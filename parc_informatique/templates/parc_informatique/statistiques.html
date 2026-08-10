@@ -1,0 +1,116 @@
+{% extends "parc_informatique/base.html" %}
+
+{% block title %}Statistiques — Parc Informatique{% endblock %}
+
+{% block page_header %}
+<div class="pi-page-header">
+    <div>
+        <h1>Statistiques</h1>
+        <p>Vue d'ensemble des coûts et performances de maintenance</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'parc_informatique:export_appareils_csv' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-file-csv"></i> Export appareils
+        </a>
+        <a href="{% url 'parc_informatique:export_maintenances_csv' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-file-csv"></i> Export maintenances
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row row-cols-2 row-cols-lg-4 g-3 mb-4">
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-info-bg); color:var(--pi-info);">
+                <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ duree_moyenne_reparation|default:"—" }}{% if duree_moyenne_reparation %} j{% endif %}</div>
+                <div class="pi-stat-label">Durée moyenne de réparation</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-success-bg); color:var(--pi-success);">
+                <i class="fa-solid fa-money-bill-1-wave"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ cout_total_maintenance }} FCFA</div>
+                <div class="pi-stat-label">Coût total de maintenance</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-primary-light); color:var(--pi-primary);">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ nb_maintenances_terminees }}</div>
+                <div class="pi-stat-label">Interventions terminées</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="pi-stat-card">
+            <div class="pi-stat-icon" style="background:var(--pi-warning-bg); color:var(--pi-warning);">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <div class="pi-stat-value">{{ nb_appareils_garantie_expiree }}</div>
+                <div class="pi-stat-label">Garanties expirées</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="pi-card h-100">
+            <div class="pi-card-header"><h5>Appareils les plus coûteux en maintenance</h5></div>
+            <div class="pi-card-body p-0">
+                {% if top_appareils_couteux %}
+                <div class="pi-table-wrap">
+                    <table class="pi-table mb-0">
+                        <thead><tr><th>Appareil</th><th>Interventions</th><th>Coût total</th></tr></thead>
+                        <tbody>
+                            {% for a in top_appareils_couteux %}
+                            <tr>
+                                <td><a href="{% url 'parc_informatique:afficher_appareil' a.id %}" class="fw-semibold text-decoration-none">{{ a.nom }}</a></td>
+                                <td>{{ a.nb_interventions }}</td>
+                                <td>{{ a.cout_maintenance }} FCFA</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="pi-empty">
+                    <i class="fa-solid fa-money-bill-1-wave"></i>
+                    Aucun coût de maintenance renseigné pour l'instant.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="pi-card h-100">
+            <div class="pi-card-header"><h5>Répartition du parc par type</h5></div>
+            <div class="pi-card-body">
+                {% for ligne in repartition_par_type %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>{{ ligne.type }}</span>
+                    <span class="pi-badge pi-badge-info">{{ ligne.total }}</span>
+                </div>
+                {% empty %}
+                <div class="pi-empty"><i class="fa-solid fa-chart-pie"></i> Aucun appareil enregistré.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

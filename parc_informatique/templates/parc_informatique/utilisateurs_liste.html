@@ -8,6 +8,11 @@
         <h1>Utilisateurs</h1>
         <p>{{ total_utilisateurs }} utilisateur{{ total_utilisateurs|pluralize }} enregistré{{ total_utilisateurs|pluralize }}</p>
     </div>
+    {% if est_gestionnaire %}
+    <a href="{% url 'parc_informatique:ajouter_utilisateur' %}" class="btn btn-pi-primary d-flex align-items-center gap-2">
+        <i class="fa-solid fa-plus"></i> Ajouter un utilisateur
+    </a>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -61,6 +66,16 @@
                             <a href="{% url 'parc_informatique:profil_utilisateur' utilisateur.id %}" class="pi-btn-icon" title="Voir le profil">
                                 <i class="fa-regular fa-eye"></i>
                             </a>
+                            {% if est_gestionnaire %}
+                            <a href="{% url 'parc_informatique:modifier_utilisateur' utilisateur.id %}" class="pi-btn-icon" title="Modifier">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            {% endif %}
+                            {% if est_admin %}
+                            <a href="{% url 'parc_informatique:supprimer_utilisateur' utilisateur.id %}" class="pi-btn-icon danger" title="Supprimer">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

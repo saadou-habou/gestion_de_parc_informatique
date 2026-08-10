@@ -3,10 +3,10 @@
         <button class="btn btn-sm d-lg-none border-0" data-pi-sidebar-toggle aria-label="Ouvrir le menu">
             <i class="fa-solid fa-bars"></i>
         </button>
-        <div class="pi-search d-none d-md-block">
+        <form action="{% url 'parc_informatique:recherche_globale' %}" method="get" class="pi-search d-none d-md-block">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="search" class="form-control" placeholder="Rechercher un appareil, un utilisateur…">
-        </div>
+            <input type="search" name="q" class="form-control" placeholder="Rechercher un appareil, un utilisateur…">
+        </form>
     </div>
 
     <div class="pi-topbar-actions">
@@ -69,6 +69,14 @@
                 <i class="fa-solid fa-chevron-down d-none d-md-inline" style="font-size:.7rem; color:var(--pi-text-muted);"></i>
             </a>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                {% if request.user.profil_technicien %}
+                <li>
+                    <a class="dropdown-item" href="{% url 'parc_informatique:mes_interventions' %}">
+                        <i class="fa-solid fa-screwdriver-wrench me-2"></i>Mes interventions
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                {% endif %}
                 <li>
                     <a class="dropdown-item" href="{% url 'parc_informatique:profil_compte' %}">
                         <i class="fa-regular fa-user me-2"></i>Mon profil
