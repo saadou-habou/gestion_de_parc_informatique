@@ -20,7 +20,11 @@ media/
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # OS
 .DS_Store
 Thumbs.db
+
+
+/parc_informatique/.flake8
