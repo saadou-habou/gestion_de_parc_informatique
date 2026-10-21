@@ -2,6 +2,7 @@
  * PARC INFORMATIQUE — comportements front (vanilla JS + SweetAlert2).
  * - Recherche instantanée dans les tableaux (data-pi-table)
  * - Filtres par statut (data-pi-filter)
+ * - Champs conditionnels liés à une case à cocher (data-pi-toggle-fields)
  * - Confirmation avant action sensible (SweetAlert2, repli sur window.confirm)
  * - Messages Django affichés en toasts SweetAlert2 (voir window.piDjangoMessages)
  * - Loader plein écran lors des soumissions de formulaire
@@ -60,6 +61,25 @@ document.addEventListener('DOMContentLoaded', function () {
     var emptyRow = table.querySelector('.pi-table-empty-row');
     if (emptyRow) emptyRow.style.display = visibleRows.length === 0 ? '' : 'none';
   }
+
+  /* ---- Champs affichés seulement si une case est cochée ----
+     <input type="checkbox" data-pi-toggle-fields="id_a,id_b"> masque les
+     blocs contenant #id_a et #id_b tant que la case n'est pas cochée.
+     Sans JS, les champs restent visibles (validation côté serveur de toute façon). */
+  document.querySelectorAll('[data-pi-toggle-fields]').forEach(function (checkbox) {
+    var ids = checkbox.getAttribute('data-pi-toggle-fields').split(',');
+
+    function mettreAJour() {
+      ids.forEach(function (id) {
+        var champ = document.getElementById(id.trim());
+        var bloc = champ && champ.closest('.mb-3');
+        if (bloc) bloc.style.display = checkbox.checked ? '' : 'none';
+      });
+    }
+
+    checkbox.addEventListener('change', mettreAJour);
+    mettreAJour();
+  });
 
   /* ---- Confirmation avant suppression (SweetAlert2) ---- */
   document.querySelectorAll('[data-pi-confirm]').forEach(function (el) {

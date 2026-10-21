@@ -24,14 +24,20 @@ class EstAuthentifieAvecRole(BasePermission):
 
 
 class EstGestionnaireOuLectureSeule(BasePermission):
-    """Lecture (GET/HEAD/OPTIONS) ouverte à tout utilisateur ayant un rôle ;
-    écriture (POST/PUT/PATCH/DELETE) réservée à Admin/Gestionnaire."""
+    """Mêmes règles que le site :
+    - lecture (GET/HEAD/OPTIONS) : tout utilisateur ayant un rôle ;
+    - création / modification (POST/PUT/PATCH) : Admin ou Gestionnaire ;
+    - suppression (DELETE) : Admin uniquement (sur le site, seuls les Admin
+      ont accès aux vues de suppression ; l'API ne doit pas être une porte
+      dérobée pour contourner cette règle)."""
 
     def has_permission(self, request, view):
         if not EstAuthentifieAvecRole().has_permission(request, view):
             return False
         if request.method in SAFE_METHODS:
             return True
+        if request.method == "DELETE":
+            return a_un_role_parmi(request.user, ADMIN)
         return a_un_role_parmi(request.user, ADMIN, GESTIONNAIRE)
 
 

@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
-from django.urls import reverse
+from django.urls import Resolver404, resolve
 
 
 class LoginRequiredMiddleware:
@@ -24,6 +24,17 @@ class LoginRequiredMiddleware:
     # Préfixe des routes API, exemptées de la connexion par session
     # (protégées à la place par JWT — voir parc_informatique/api/).
     API_URL_PREFIX = "/api/"
+
+    # Vues accessibles sans être connecté : la connexion elle-même et tout le
+    # parcours "mot de passe oublié" (par définition utilisé par quelqu'un qui
+    # ne peut PAS se connecter).
+    VUES_PUBLIQUES = {
+        "parc_informatique:login",
+        "parc_informatique:password_reset",
+        "parc_informatique:password_reset_done",
+        "parc_informatique:password_reset_confirm",
+        "parc_informatique:password_reset_complete",
+    }
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -52,4 +63,12 @@ class LoginRequiredMiddleware:
             return True
         if request.path.startswith(self.API_URL_PREFIX):
             return True
-        return request.path == reverse("parc_informatique:login")
+        # resolve() est appelable directement ici (contrairement à
+        # request.resolver_match, pas encore renseigné) : on retrouve le nom
+        # de la vue à partir du chemin, ce qui couvre aussi les URLs à
+        # paramètres comme /reinitialiser/<uidb64>/<token>/.
+        try:
+            correspondance = resolve(request.path_info)
+        except Resolver404:
+            return False
+        return correspondance.view_name in self.VUES_PUBLIQUES

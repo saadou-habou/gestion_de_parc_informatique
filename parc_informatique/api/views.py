@@ -61,7 +61,7 @@ class HistoriqueMaintenanceViewSet(viewsets.ModelViewSet):
     """
     Lecture/création ouvertes à tout rôle connecté (un Technicien doit
     pouvoir loguer et clôturer ses propres interventions) ; suppression
-    réservée à Admin/Gestionnaire.
+    réservée à l'Admin (voir EstGestionnaireOuLectureSeule).
     """
 
     queryset = HistoriqueMaintenance.objects.select_related("appareil", "technicien").order_by(

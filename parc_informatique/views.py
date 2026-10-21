@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Avg, Count, Exists, OuterRef, Q, Sum
+from django.db.models import Count, Exists, OuterRef, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -348,14 +348,29 @@ def liste_techniciens(request):
     return render(request, "parc_informatique/techniciens_liste.html", context)
 
 
+def _journaliser_technicien(request, action, technicien, form):
+    """Journalise la fiche, en précisant si un compte de connexion a été créé
+    (jamais le mot de passe, évidemment : seulement l'identifiant)."""
+    details = ""
+    if form.compte_cree:
+        details = f"Compte de connexion « {form.compte_cree.username} » créé (rôle Technicien)"
+    journaliser(request, action, technicien, details=details)
+
+
+def _message_technicien(base, form):
+    if form.compte_cree:
+        return f"{base} Compte de connexion « {form.compte_cree.username} » créé."
+    return base
+
+
 @role_required(ADMIN, GESTIONNAIRE)
 def ajouter_technicien(request):
     if request.method == "POST":
         form = TechnicienForm(request.POST)
         if form.is_valid():
             technicien = form.save()
-            journaliser(request, "creation", technicien)
-            messages.success(request, "Technicien ajouté avec succès.")
+            _journaliser_technicien(request, "creation", technicien, form)
+            messages.success(request, _message_technicien("Technicien ajouté avec succès.", form))
             return redirect("parc_informatique:liste_techniciens")
     else:
         form = TechnicienForm()
@@ -369,8 +384,8 @@ def modifier_technicien(request, technicien_id):
         form = TechnicienForm(request.POST, instance=technicien)
         if form.is_valid():
             form.save()
-            journaliser(request, "modification", technicien)
-            messages.success(request, "Technicien mis à jour.")
+            _journaliser_technicien(request, "modification", technicien, form)
+            messages.success(request, _message_technicien("Technicien mis à jour.", form))
             return redirect("parc_informatique:liste_techniciens")
     else:
         form = TechnicienForm(instance=technicien)
@@ -725,7 +740,7 @@ def _traiter_import_csv(request, fichier):
                 erreurs.append(f"Ligne {i} : utilisateur « {ligne['utilisateur']} » introuvable, ignoré.")
 
         try:
-            appareil = Appareil.objects.create(
+            Appareil.objects.create(
                 nom=nom,
                 type=type_,
                 marque=(ligne.get("marque") or "").strip(),

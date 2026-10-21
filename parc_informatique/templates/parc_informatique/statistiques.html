@@ -35,10 +35,10 @@
     <div class="col">
         <div class="pi-stat-card">
             <div class="pi-stat-icon" style="background:var(--pi-success-bg); color:var(--pi-success);">
-                <i class="fa-solid fa-money-bill-1-wave"></i>
+                <i class="fa-solid fa-euro-sign"></i>
             </div>
             <div>
-                <div class="pi-stat-value">{{ cout_total_maintenance }} FCFA</div>
+                <div class="pi-stat-value">{{ cout_total_maintenance }} €</div>
                 <div class="pi-stat-label">Coût total de maintenance</div>
             </div>
         </div>
@@ -81,7 +81,7 @@
                             <tr>
                                 <td><a href="{% url 'parc_informatique:afficher_appareil' a.id %}" class="fw-semibold text-decoration-none">{{ a.nom }}</a></td>
                                 <td>{{ a.nb_interventions }}</td>
-                                <td>{{ a.cout_maintenance }} FCFA</td>
+                                <td>{{ a.cout_maintenance }} €</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -89,7 +89,7 @@
                 </div>
                 {% else %}
                 <div class="pi-empty">
-                    <i class="fa-solid fa-money-bill-1-wave"></i>
+                    <i class="fa-solid fa-euro-sign"></i>
                     Aucun coût de maintenance renseigné pour l'instant.
                 </div>
                 {% endif %}

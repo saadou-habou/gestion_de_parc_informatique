@@ -15,6 +15,12 @@
 {% block content %}
 <div class="pi-card" style="max-width: 640px;">
     <div class="pi-card-body">
+        {% if technicien.compte_utilisateur %}
+        <div class="alert alert-info d-flex align-items-center gap-2" style="font-size:.85rem;">
+            <i class="fa-solid fa-key"></i>
+            <div>Compte de connexion : <strong>{{ technicien.compte_utilisateur.username }}</strong></div>
+        </div>
+        {% endif %}
         <form method="post" class="pi-form" data-pi-loading novalidate>
             {% csrf_token %}
             {% include "parc_informatique/include/form_fields.html" %}
