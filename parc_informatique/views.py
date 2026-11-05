@@ -44,7 +44,6 @@ from parc_informatique.services.maintenance import (
     terminer_maintenance as terminer_maintenance_service,
 )
 
-
 PARC_INFORMATIQUE_INDEX = "parc_informatique:index"
 
 APPAREILS_PAR_PAGE = 10
@@ -64,10 +63,15 @@ def dashboard(request):
         "appareils_maintenance": appareils.filter(etat="En réparation").count(),
         "appareils_obsoletes": appareils.filter(etat="Obsolète").count(),
         "appareils_affectes": appareils.exclude(utilisateur__isnull=True).count(),
-        "utilisateurs_actifs": Utilisateur.objects.filter(appareils__isnull=False).distinct().count(),
-        "appareils_en_alerte": appareils.filter(etat="En réparation").order_by("nom")[:5],
-        "dernieres_activites": HistoriqueMaintenance.objects.select_related("appareil")
-                                    .order_by("-date_intervention")[:6],
+        "utilisateurs_actifs": Utilisateur.objects.filter(appareils__isnull=False)
+        .distinct()
+        .count(),
+        "appareils_en_alerte": appareils.filter(etat="En réparation").order_by("nom")[
+            :5
+        ],
+        "dernieres_activites": HistoriqueMaintenance.objects.select_related(
+            "appareil"
+        ).order_by("-date_intervention")[:6],
     }
     return render(request, "parc_informatique/dashboard.html", context)
 
@@ -78,7 +82,7 @@ def index(request):
     page_obj = paginator.get_page(request.GET.get("page"))
 
     context = {
-        "appareils": page_obj,          # itérable : {% for appareil in appareils %} fonctionne toujours
+        "appareils": page_obj,  # itérable : {% for appareil in appareils %} fonctionne toujours
         "page_obj": page_obj,
         "total_appareils": paginator.count,
     }
@@ -137,20 +141,28 @@ def modifier_appareil(request, appareil_id):
                 messages.info(
                     request,
                     "Merci de renseigner les détails de l'intervention (technicien, description) "
-                    "pour envoyer cet appareil en maintenance."
+                    "pour envoyer cet appareil en maintenance.",
                 )
-                return redirect("parc_informatique:envoyer_en_maintenance", appareil_id=appareil.id)
+                return redirect(
+                    "parc_informatique:envoyer_en_maintenance", appareil_id=appareil.id
+                )
 
             appareil = changer_etat_appareil(
                 appareil_id=appareil.pk, nouvel_etat=nouvel_etat
             )
-            journaliser(request, "modification", appareil, details=f"état → {nouvel_etat}")
+            journaliser(
+                request, "modification", appareil, details=f"état → {nouvel_etat}"
+            )
 
             return redirect(PARC_INFORMATIQUE_INDEX)
     else:
         form = ModificationAppareilForm(instance=appareil)
 
-    return render(request, "parc_informatique/appareil_edit_form.html", {"form": form, "appareil": appareil})
+    return render(
+        request,
+        "parc_informatique/appareil_edit_form.html",
+        {"form": form, "appareil": appareil},
+    )
 
 
 @role_required(ADMIN)
@@ -160,12 +172,16 @@ def supprimer_appareil(request, appareil_id):
         journaliser(request, "suppression", appareil)
         appareil.delete()
         return redirect(PARC_INFORMATIQUE_INDEX)
-    return render(request, "parc_informatique/confirmer_suppression.html", {"appareil": appareil})
+    return render(
+        request, "parc_informatique/confirmer_suppression.html", {"appareil": appareil}
+    )
 
 
 def historique_maintenance(request, appareil_id):
     appareil = get_object_or_404(Appareil, pk=appareil_id)
-    maintenances = HistoriqueMaintenance.objects.filter(appareil=appareil).order_by('-date_intervention')
+    maintenances = HistoriqueMaintenance.objects.filter(appareil=appareil).order_by(
+        "-date_intervention"
+    )
     context = {
         "appareil": appareil,
         "historiquemaintenances": maintenances,
@@ -187,17 +203,29 @@ def envoyer_en_maintenance(request, appareil_id):
                 cout=form.cleaned_data.get("cout"),
                 date_intervention=now().date(),
             )
-            journaliser(request, "action", appareil, details=f"Envoyé en maintenance (intervention #{maintenance.id})")
-            return redirect("parc_informatique:afficher_appareil", appareil_id=appareil.id)
+            journaliser(
+                request,
+                "action",
+                appareil,
+                details=f"Envoyé en maintenance (intervention #{maintenance.id})",
+            )
+            return redirect(
+                "parc_informatique:afficher_appareil", appareil_id=appareil.id
+            )
     else:
         form = HistoriqueMaintenanceForm()
 
-    return render(request, "parc_informatique/envoyer_en_maintenance.html", {"form": form, "appareil": appareil})
+    return render(
+        request,
+        "parc_informatique/envoyer_en_maintenance.html",
+        {"form": form, "appareil": appareil},
+    )
 
 
 # ---------------------------------------------------------------------------
 # Utilisateurs & affectations
 # ---------------------------------------------------------------------------
+
 
 def liste_utilisateurs(request):
     utilisateurs_list = Utilisateur.objects.all().order_by("nom", "prenom")
@@ -214,7 +242,9 @@ def liste_utilisateurs(request):
 
 def profil_utilisateur(request, utilisateur_id):
     utilisateur = get_object_or_404(Utilisateur, pk=utilisateur_id)
-    appareils_affectes = Appareil.objects.filter(utilisateur=utilisateur).order_by("nom")
+    appareils_affectes = Appareil.objects.filter(utilisateur=utilisateur).order_by(
+        "nom"
+    )
     historique_affectations = (
         HistoriqueAffectation.objects.filter(utilisateur=utilisateur)
         .select_related("appareil")
@@ -242,10 +272,18 @@ def affecter_appareil(request, appareil_id):
             )
             if changement_effectue:
                 journaliser(
-                    request, "action", appareil,
-                    details=f"Affecté à {nouvel_utilisateur}" if nouvel_utilisateur else "Retiré à son utilisateur",
+                    request,
+                    "action",
+                    appareil,
+                    details=(
+                        f"Affecté à {nouvel_utilisateur}"
+                        if nouvel_utilisateur
+                        else "Retiré à son utilisateur"
+                    ),
                 )
-            return redirect("parc_informatique:afficher_appareil", appareil_id=appareil.id)
+            return redirect(
+                "parc_informatique:afficher_appareil", appareil_id=appareil.id
+            )
     else:
         form = AffectationForm(instance=appareil)
 
@@ -271,11 +309,12 @@ def historique_affectations(request, appareil_id):
 # Maintenances
 # ---------------------------------------------------------------------------
 
+
 def liste_maintenances(request):
     """Vue globale de toutes les interventions de maintenance, tous appareils confondus."""
-    maintenances_list = HistoriqueMaintenance.objects.select_related("appareil").order_by(
-        "-date_intervention", "-id"
-    )
+    maintenances_list = HistoriqueMaintenance.objects.select_related(
+        "appareil"
+    ).order_by("-date_intervention", "-id")
     paginator = Paginator(maintenances_list, MAINTENANCES_PAR_PAGE)
     page_obj = paginator.get_page(request.GET.get("page"))
 
@@ -283,8 +322,12 @@ def liste_maintenances(request):
         "maintenances": page_obj,
         "page_obj": page_obj,
         "total_maintenances": paginator.count,
-        "maintenances_en_cours": HistoriqueMaintenance.objects.filter(statut="Non réparé").count(),
-        "maintenances_terminees": HistoriqueMaintenance.objects.filter(statut="Réparé").count(),
+        "maintenances_en_cours": HistoriqueMaintenance.objects.filter(
+            statut="Non réparé"
+        ).count(),
+        "maintenances_terminees": HistoriqueMaintenance.objects.filter(
+            statut="Réparé"
+        ).count(),
     }
     return render(request, "parc_informatique/maintenances_liste.html", context)
 
@@ -304,12 +347,23 @@ def terminer_maintenance(request, maintenance_id):
             TECHNICIEN in request.user.groups.values_list("name", flat=True)
             and not request.user.is_superuser
             and not request.user.groups.filter(name__in=[ADMIN, GESTIONNAIRE]).exists()
-            and (not maintenance.technicien_id or maintenance.technicien.compte_utilisateur_id != request.user.pk)
+            and (
+                not maintenance.technicien_id
+                or maintenance.technicien.compte_utilisateur_id != request.user.pk
+            )
         ):
             from django.core.exceptions import PermissionDenied
-            raise PermissionDenied("Vous ne pouvez clôturer que vos propres interventions.")
+
+            raise PermissionDenied(
+                "Vous ne pouvez clôturer que vos propres interventions."
+            )
         maintenance = terminer_maintenance_service(maintenance_id=maintenance.pk)
-        journaliser(request, "action", maintenance.appareil, details=f"Maintenance #{maintenance.id} terminée")
+        journaliser(
+            request,
+            "action",
+            maintenance.appareil,
+            details=f"Maintenance #{maintenance.id} terminée",
+        )
 
     next_url = request.POST.get("next") or request.GET.get("next")
     if next_url and url_has_allowed_host_and_scheme(
@@ -322,6 +376,7 @@ def terminer_maintenance(request, maintenance_id):
 # ---------------------------------------------------------------------------
 # Techniciens
 # ---------------------------------------------------------------------------
+
 
 def liste_techniciens(request):
     techniciens_list = Technicien.objects.all().order_by("nom", "prenom")
@@ -358,7 +413,9 @@ def ajouter_technicien(request):
         if form.is_valid():
             technicien = form.save()
             _journaliser_technicien(request, "creation", technicien, form)
-            messages.success(request, _message_technicien("Technicien ajouté avec succès.", form))
+            messages.success(
+                request, _message_technicien("Technicien ajouté avec succès.", form)
+            )
             return redirect("parc_informatique:liste_techniciens")
     else:
         form = TechnicienForm()
@@ -373,7 +430,9 @@ def modifier_technicien(request, technicien_id):
         if form.is_valid():
             form.save()
             _journaliser_technicien(request, "modification", technicien, form)
-            messages.success(request, _message_technicien("Technicien mis à jour.", form))
+            messages.success(
+                request, _message_technicien("Technicien mis à jour.", form)
+            )
             return redirect("parc_informatique:liste_techniciens")
     else:
         form = TechnicienForm(instance=technicien)
@@ -390,7 +449,9 @@ def supprimer_technicien(request, technicien_id):
     if request.method == "POST":
         journaliser(request, "suppression", technicien)
         technicien.delete()
-        messages.success(request, "Technicien supprimé. Son historique d'interventions est conservé.")
+        messages.success(
+            request, "Technicien supprimé. Son historique d'interventions est conservé."
+        )
         return redirect("parc_informatique:liste_techniciens")
     return render(
         request,
@@ -403,6 +464,7 @@ def supprimer_technicien(request, technicien_id):
 # Compte (profil / paramètres)
 # ---------------------------------------------------------------------------
 
+
 @login_required
 def profil_compte(request):
     return render(request, "parc_informatique/compte/profil.html")
@@ -411,7 +473,9 @@ def profil_compte(request):
 @login_required
 def parametres_compte(request):
     if request.method == "POST":
-        password_form = BootstrapPasswordChangeForm(user=request.user, data=request.POST)
+        password_form = BootstrapPasswordChangeForm(
+            user=request.user, data=request.POST
+        )
         if password_form.is_valid():
             user = password_form.save()
             # Sans ça, changer son propre mot de passe invaliderait la
@@ -433,16 +497,14 @@ def parametres_compte(request):
 # Notifications
 # ---------------------------------------------------------------------------
 
+
 @login_required
 def notifications_liste(request):
     generer_notifications()
 
-    notifications_list = (
-        Notification.objects.annotate(
-            lue=Exists(Notification.objects.filter(pk=OuterRef("pk"), lue_par=request.user))
-        )
-        .order_by("-cree_le")
-    )
+    notifications_list = Notification.objects.annotate(
+        lue=Exists(Notification.objects.filter(pk=OuterRef("pk"), lue_par=request.user))
+    ).order_by("-cree_le")
 
     paginator = Paginator(notifications_list, NOTIFICATIONS_PAR_PAGE)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -450,7 +512,9 @@ def notifications_liste(request):
     context = {
         "notifications": page_obj,
         "page_obj": page_obj,
-        "notifications_non_resolues_count": Notification.objects.filter(resolue=False).count(),
+        "notifications_non_resolues_count": Notification.objects.filter(
+            resolue=False
+        ).count(),
     }
     return render(request, "parc_informatique/notifications_liste.html", context)
 
@@ -472,6 +536,7 @@ def marquer_notifications_lues(request):
 # ---------------------------------------------------------------------------
 # CRUD Utilisateurs
 # ---------------------------------------------------------------------------
+
 
 @role_required(ADMIN, GESTIONNAIRE)
 def ajouter_utilisateur(request):
@@ -496,7 +561,9 @@ def modifier_utilisateur(request, utilisateur_id):
             form.save()
             journaliser(request, "modification", utilisateur)
             messages.success(request, "Utilisateur mis à jour.")
-            return redirect("parc_informatique:profil_utilisateur", utilisateur_id=utilisateur.id)
+            return redirect(
+                "parc_informatique:profil_utilisateur", utilisateur_id=utilisateur.id
+            )
     else:
         form = UtilisateurForm(instance=utilisateur)
     return render(
@@ -525,8 +592,11 @@ def supprimer_utilisateur(request, utilisateur_id):
 # CRUD Locaux
 # ---------------------------------------------------------------------------
 
+
 def liste_locaux(request):
-    locaux_list = Local.objects.annotate(nb_appareils=Count("appareils")).order_by("batiment", "nom")
+    locaux_list = Local.objects.annotate(nb_appareils=Count("appareils")).order_by(
+        "batiment", "nom"
+    )
     paginator = Paginator(locaux_list, LOCAUX_PAR_PAGE)
     page_obj = paginator.get_page(request.GET.get("page"))
     context = {
@@ -563,7 +633,11 @@ def modifier_local(request, local_id):
             return redirect("parc_informatique:liste_locaux")
     else:
         form = LocalForm(instance=local)
-    return render(request, "parc_informatique/local_edit_form.html", {"form": form, "local": local})
+    return render(
+        request,
+        "parc_informatique/local_edit_form.html",
+        {"form": form, "local": local},
+    )
 
 
 @role_required(ADMIN)
@@ -574,12 +648,15 @@ def supprimer_local(request, local_id):
         local.delete()
         messages.success(request, "Local supprimé.")
         return redirect("parc_informatique:liste_locaux")
-    return render(request, "parc_informatique/confirmer_suppression_local.html", {"local": local})
+    return render(
+        request, "parc_informatique/confirmer_suppression_local.html", {"local": local}
+    )
 
 
 # ---------------------------------------------------------------------------
 # Recherche globale
 # ---------------------------------------------------------------------------
+
 
 @login_required
 def recherche_globale(request):
@@ -588,17 +665,25 @@ def recherche_globale(request):
 
     if terme:
         resultats["appareils"] = Appareil.objects.filter(
-            Q(nom__icontains=terme) | Q(numero_serie__icontains=terme)
-            | Q(marque__icontains=terme) | Q(modele__icontains=terme)
+            Q(nom__icontains=terme)
+            | Q(numero_serie__icontains=terme)
+            | Q(marque__icontains=terme)
+            | Q(modele__icontains=terme)
         ).order_by("nom")[:25]
         resultats["utilisateurs"] = Utilisateur.objects.filter(
-            Q(nom__icontains=terme) | Q(prenom__icontains=terme) | Q(email__icontains=terme)
+            Q(nom__icontains=terme)
+            | Q(prenom__icontains=terme)
+            | Q(email__icontains=terme)
         ).order_by("nom")[:25]
         resultats["techniciens"] = Technicien.objects.filter(
             Q(nom__icontains=terme) | Q(prenom__icontains=terme)
         ).order_by("nom")[:25]
 
-    total = len(resultats["appareils"]) + len(resultats["utilisateurs"]) + len(resultats["techniciens"])
+    total = (
+        len(resultats["appareils"])
+        + len(resultats["utilisateurs"])
+        + len(resultats["techniciens"])
+    )
     context = {"terme": terme, "resultats": resultats, "total_resultats": total}
     return render(request, "parc_informatique/recherche_resultats.html", context)
 
@@ -607,6 +692,7 @@ def recherche_globale(request):
 # Mes interventions (technicien connecté)
 # ---------------------------------------------------------------------------
 
+
 @login_required
 def mes_interventions(request):
     technicien = getattr(request.user, "profil_technicien", None)
@@ -614,9 +700,11 @@ def mes_interventions(request):
         messages.info(request, "Votre compte n'est relié à aucune fiche technicien.")
         return redirect("parc_informatique:dashboard")
 
-    maintenances_list = HistoriqueMaintenance.objects.filter(technicien=technicien).select_related(
-        "appareil"
-    ).order_by("-date_intervention", "-id")
+    maintenances_list = (
+        HistoriqueMaintenance.objects.filter(technicien=technicien)
+        .select_related("appareil")
+        .order_by("-date_intervention", "-id")
+    )
     paginator = Paginator(maintenances_list, MAINTENANCES_PAR_PAGE)
     page_obj = paginator.get_page(request.GET.get("page"))
 
@@ -634,7 +722,7 @@ def mes_interventions(request):
 # Exports CSV
 # ---------------------------------------------------------------------------
 
-@role_required(ADMIN, GESTIONNAIRE)
+
 def _csv_safe(value):
     """Neutralise les formules exécutables lors de l'ouverture d'un CSV dans un tableur."""
     if value is None:
@@ -645,25 +733,53 @@ def _csv_safe(value):
     return text_value
 
 
+@role_required(ADMIN, GESTIONNAIRE)
 def export_appareils_csv(request):
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="appareils.csv"'
     response.write("\ufeff")  # BOM pour un bon rendu des accents dans Excel
 
     writer = csv.writer(response)
-    writer.writerow([
-        "Nom", "Type", "Marque", "Modèle", "Numéro de série", "État",
-        "Date d'acquisition", "Fournisseur", "Prix d'achat", "Fin de garantie",
-        "Localisation", "Utilisateur",
-    ])
-    for a in Appareil.objects.select_related("localisation", "utilisateur").order_by("nom"):
-        writer.writerow([
-            *[_csv_safe(value) for value in (
-                a.nom, a.type, a.marque, a.modele, a.numero_serie, a.etat,
-                a.date_acquisition, a.fournisseur, a.prix_achat,
-                a.date_fin_garantie, a.localisation, a.utilisateur,
-            )],
-        ])
+    writer.writerow(
+        [
+            "Nom",
+            "Type",
+            "Marque",
+            "Modèle",
+            "Numéro de série",
+            "État",
+            "Date d'acquisition",
+            "Fournisseur",
+            "Prix d'achat",
+            "Fin de garantie",
+            "Localisation",
+            "Utilisateur",
+        ]
+    )
+    for a in Appareil.objects.select_related("localisation", "utilisateur").order_by(
+        "nom"
+    ):
+        writer.writerow(
+            [
+                *[
+                    _csv_safe(value)
+                    for value in (
+                        a.nom,
+                        a.type,
+                        a.marque,
+                        a.modele,
+                        a.numero_serie,
+                        a.etat,
+                        a.date_acquisition,
+                        a.fournisseur,
+                        a.prix_achat,
+                        a.date_fin_garantie,
+                        a.localisation,
+                        a.utilisateur,
+                    )
+                ],
+            ]
+        )
     journaliser(request, "action", Appareil, details="Export CSV de l'inventaire")
     return response
 
@@ -675,24 +791,46 @@ def export_maintenances_csv(request):
     response.write("\ufeff")
 
     writer = csv.writer(response)
-    writer.writerow([
-        "Appareil", "Date d'intervention", "Date de réparation", "Technicien",
-        "Statut", "Coût", "Description",
-    ])
-    for m in HistoriqueMaintenance.objects.select_related("appareil", "technicien").order_by("-date_intervention"):
-        writer.writerow([
-            *[_csv_safe(value) for value in (
-                m.appareil.nom, m.date_intervention, m.date_reparation,
-                m.technicien, m.statut, m.cout, m.description,
-            )],
-        ])
-    journaliser(request, "action", HistoriqueMaintenance, details="Export CSV des maintenances")
+    writer.writerow(
+        [
+            "Appareil",
+            "Date d'intervention",
+            "Date de réparation",
+            "Technicien",
+            "Statut",
+            "Coût",
+            "Description",
+        ]
+    )
+    for m in HistoriqueMaintenance.objects.select_related(
+        "appareil", "technicien"
+    ).order_by("-date_intervention"):
+        writer.writerow(
+            [
+                *[
+                    _csv_safe(value)
+                    for value in (
+                        m.appareil.nom,
+                        m.date_intervention,
+                        m.date_reparation,
+                        m.technicien,
+                        m.statut,
+                        m.cout,
+                        m.description,
+                    )
+                ],
+            ]
+        )
+    journaliser(
+        request, "action", HistoriqueMaintenance, details="Export CSV des maintenances"
+    )
     return response
 
 
 # ---------------------------------------------------------------------------
 # Import CSV en masse
 # ---------------------------------------------------------------------------
+
 
 @role_required(ADMIN, GESTIONNAIRE)
 def importer_appareils(request):
@@ -705,7 +843,9 @@ def importer_appareils(request):
         form = ImporterAppareilsForm()
 
     return render(
-        request, "parc_informatique/importer_appareils.html", {"form": form, "resultat": resultat}
+        request,
+        "parc_informatique/importer_appareils.html",
+        {"form": form, "resultat": resultat},
     )
 
 
@@ -726,7 +866,9 @@ def _traiter_import_csv(request, fichier):
     try:
         try:
             donnees = fichier.read(5 * 1024 * 1024 + 1)
-        except TypeError:  # compatibilité avec les objets fichier simples utilisés dans les tests
+        except (
+            TypeError
+        ):  # compatibilité avec les objets fichier simples utilisés dans les tests
             donnees = fichier.read()
         contenu = donnees.decode("utf-8-sig")
     except (UnicodeDecodeError, AttributeError):
@@ -736,8 +878,15 @@ def _traiter_import_csv(request, fichier):
 
     lecteur = csv.DictReader(io.StringIO(contenu))
     colonnes_requises = {"nom", "type", "numero_serie"}
-    if not lecteur.fieldnames or not colonnes_requises.issubset(set(lecteur.fieldnames)):
-        return {"crees": 0, "erreurs": ["En-têtes invalides : nom, type et numero_serie sont obligatoires."]}
+    if not lecteur.fieldnames or not colonnes_requises.issubset(
+        set(lecteur.fieldnames)
+    ):
+        return {
+            "crees": 0,
+            "erreurs": [
+                "En-têtes invalides : nom, type et numero_serie sont obligatoires."
+            ],
+        }
 
     for i, ligne in enumerate(lecteur, start=2):
         if i > 1001:
@@ -754,7 +903,9 @@ def _traiter_import_csv(request, fichier):
             erreurs.append(f"Ligne {i} : type d'appareil invalide.")
             continue
         if Appareil.objects.filter(numero_serie=numero_serie).exists():
-            erreurs.append(f"Ligne {i} : numéro de série « {numero_serie} » déjà existant, ignoré.")
+            erreurs.append(
+                f"Ligne {i} : numéro de série « {numero_serie} » déjà existant, ignoré."
+            )
             continue
 
         etat = (ligne.get("etat") or "Disponible").strip()
@@ -786,32 +937,49 @@ def _traiter_import_csv(request, fichier):
             utilisateur = None
             email_raw = (ligne.get("utilisateur") or "").strip()
             if email_raw:
-                utilisateur = Utilisateur.objects.filter(email__iexact=email_raw).first()
+                utilisateur = Utilisateur.objects.filter(
+                    email__iexact=email_raw
+                ).first()
                 if not utilisateur:
                     raise ValueError("utilisateur inconnu")
 
             appareil = Appareil(
-                nom=nom, type=type_, marque=(ligne.get("marque") or "").strip(),
-                modele=(ligne.get("modele") or "").strip(), numero_serie=numero_serie,
-                etat=etat, date_acquisition=acquisition,
-                fournisseur=(ligne.get("fournisseur") or "").strip(), prix_achat=prix,
-                date_fin_garantie=garantie, localisation=localisation, utilisateur=utilisateur,
+                nom=nom,
+                type=type_,
+                marque=(ligne.get("marque") or "").strip(),
+                modele=(ligne.get("modele") or "").strip(),
+                numero_serie=numero_serie,
+                etat=etat,
+                date_acquisition=acquisition,
+                fournisseur=(ligne.get("fournisseur") or "").strip(),
+                prix_achat=prix,
+                date_fin_garantie=garantie,
+                localisation=localisation,
+                utilisateur=utilisateur,
             )
             appareil.full_clean()
             with transaction.atomic():
                 appareil.save()
                 if utilisateur:
                     HistoriqueAffectation.objects.create(
-                        appareil=appareil, utilisateur=utilisateur,
+                        appareil=appareil,
+                        utilisateur=utilisateur,
                         date_debut=acquisition or now().date(),
                     )
             crees += 1
         except (ValidationError, ValueError, InvalidOperation, IntegrityError):
-            erreurs.append(f"Ligne {i} : données invalides ou numéro de série déjà utilisé.")
+            erreurs.append(
+                f"Ligne {i} : données invalides ou numéro de série déjà utilisé."
+            )
             continue
 
     if crees:
-        journaliser(request, "action", Appareil, details=f"Import CSV : {crees} appareil(s) créé(s)")
+        journaliser(
+            request,
+            "action",
+            Appareil,
+            details=f"Import CSV : {crees} appareil(s) créé(s)",
+        )
     return {"crees": crees, "erreurs": erreurs}
 
 
@@ -839,6 +1007,7 @@ def qr_code_appareil(request, appareil_id):
 # Statistiques
 # ---------------------------------------------------------------------------
 
+
 @role_required(ADMIN, GESTIONNAIRE)
 def statistiques(request):
     maintenances_terminees = HistoriqueMaintenance.objects.filter(
@@ -847,11 +1016,15 @@ def statistiques(request):
 
     duree_moyenne = None
     if maintenances_terminees.exists():
-        total_jours = sum(m.duree_jours for m in maintenances_terminees if m.duree_jours is not None)
+        total_jours = sum(
+            m.duree_jours for m in maintenances_terminees if m.duree_jours is not None
+        )
         nb = sum(1 for m in maintenances_terminees if m.duree_jours is not None)
         duree_moyenne = round(total_jours / nb, 1) if nb else None
 
-    cout_total = HistoriqueMaintenance.objects.aggregate(total=Sum("cout"))["total"] or 0
+    cout_total = (
+        HistoriqueMaintenance.objects.aggregate(total=Sum("cout"))["total"] or 0
+    )
 
     top_appareils_couteux = (
         Appareil.objects.annotate(
@@ -872,7 +1045,9 @@ def statistiques(request):
         "top_appareils_couteux": top_appareils_couteux,
         "repartition_par_type": repartition_par_type,
         "nb_maintenances_terminees": maintenances_terminees.count(),
-        "nb_appareils_garantie_expiree": sum(1 for a in Appareil.objects.all() if a.garantie_expiree),
+        "nb_appareils_garantie_expiree": sum(
+            1 for a in Appareil.objects.all() if a.garantie_expiree
+        ),
     }
     return render(request, "parc_informatique/statistiques.html", context)
 
@@ -881,9 +1056,12 @@ def statistiques(request):
 # Journal d'audit
 # ---------------------------------------------------------------------------
 
+
 @role_required(ADMIN)
 def liste_journal_audit(request):
-    entrees_list = JournalAudit.objects.select_related("utilisateur").order_by("-horodatage")
+    entrees_list = JournalAudit.objects.select_related("utilisateur").order_by(
+        "-horodatage"
+    )
     paginator = Paginator(entrees_list, JOURNAL_PAR_PAGE)
     page_obj = paginator.get_page(request.GET.get("page"))
     context = {"entrees": page_obj, "page_obj": page_obj}
