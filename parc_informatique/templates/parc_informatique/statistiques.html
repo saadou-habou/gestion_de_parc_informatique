@@ -38,7 +38,7 @@
                 <i class="fa-solid fa-euro-sign"></i>
             </div>
             <div>
-                <div class="pi-stat-value">{{ cout_total_maintenance }} €</div>
+                <div class="pi-stat-value">{{ cout_total_maintenance }} FCFA</div>
                 <div class="pi-stat-label">Coût total de maintenance</div>
             </div>
         </div>
@@ -81,7 +81,7 @@
                             <tr>
                                 <td><a href="{% url 'parc_informatique:afficher_appareil' a.id %}" class="fw-semibold text-decoration-none">{{ a.nom }}</a></td>
                                 <td>{{ a.nb_interventions }}</td>
-                                <td>{{ a.cout_maintenance }} €</td>
+                                <td>{{ a.cout_maintenance }} FCFA</td>
                             </tr>
                             {% endfor %}
                         </tbody>

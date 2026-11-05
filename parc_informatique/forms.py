@@ -6,7 +6,13 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from parc_informatique.models import Appareil, HistoriqueMaintenance, Local, Technicien, Utilisateur
+from parc_informatique.models import (
+    Appareil,
+    HistoriqueMaintenance,
+    Local,
+    Technicien,
+    Utilisateur,
+)
 from parc_informatique.roles import TECHNICIEN
 
 
@@ -49,11 +55,13 @@ class BootstrapModelForm(BootstrapFieldsMixin, forms.ModelForm):
 
 class BootstrapAuthenticationForm(BootstrapFieldsMixin, AuthenticationForm):
     """Formulaire de connexion (django.contrib.auth) stylé Bootstrap."""
+
     pass
 
 
 class BootstrapPasswordChangeForm(BootstrapFieldsMixin, PasswordChangeForm):
     """Formulaire de changement de mot de passe, utilisé dans "Paramètres"."""
+
     pass
 
 
@@ -61,41 +69,47 @@ class AppareilForm(BootstrapModelForm):
     class Meta:
         model = Appareil
         fields = [
-            'nom',
-            'type',
-            'marque',
-            'modele',
-            'numero_serie',
-            'etat',
-            'date_acquisition',
-            'fournisseur',
-            'prix_achat',
-            'date_fin_garantie',
-            'localisation',
-            'utilisateur',
+            "nom",
+            "type",
+            "marque",
+            "modele",
+            "numero_serie",
+            "etat",
+            "date_acquisition",
+            "fournisseur",
+            "prix_achat",
+            "date_fin_garantie",
+            "localisation",
+            "utilisateur",
         ]
         labels = {
-            'nom': 'Nom',
-            'type': 'Type',
-            'marque': 'Marque',
-            'modele': 'Modèle',
-            'numero_serie': 'Numéro de série',
-            'etat': 'Etat',
-            'date_acquisition': "Date d'acquisition",
-            'fournisseur': 'Fournisseur',
-            'prix_achat': "Prix d'achat (€)",
-            'date_fin_garantie': 'Fin de garantie',
-            'localisation': 'Localisation',
-            'utilisateur': 'Utilisateur',
+            "nom": "Nom",
+            "type": "Type",
+            "marque": "Marque",
+            "modele": "Modèle",
+            "numero_serie": "Numéro de série",
+            "etat": "Etat",
+            "date_acquisition": "Date d'acquisition",
+            "fournisseur": "Fournisseur",
+            "prix_achat": "Prix d'achat (FCFA)",
+            "date_fin_garantie": "Fin de garantie",
+            "localisation": "Localisation",
+            "utilisateur": "Utilisateur",
         }
         widgets = {
             "nom": forms.TextInput(attrs={"placeholder": "Ex. PC-Comptabilité-01"}),
             "marque": forms.TextInput(attrs={"placeholder": "Ex. Dell, HP, Lenovo…"}),
             "modele": forms.TextInput(attrs={"placeholder": "Ex. Latitude 5540"}),
-            "numero_serie": forms.TextInput(attrs={"placeholder": "Numéro de série constructeur"}),
+            "numero_serie": forms.TextInput(
+                attrs={"placeholder": "Numéro de série constructeur"}
+            ),
             "date_acquisition": forms.DateInput(attrs={"type": "date"}),
-            "fournisseur": forms.TextInput(attrs={"placeholder": "Ex. Grosbill, CDiscount Pro…"}),
-            "prix_achat": forms.NumberInput(attrs={"step": "0.01", "placeholder": "0.00"}),
+            "fournisseur": forms.TextInput(
+                attrs={"placeholder": "Ex. Grosbill, CDiscount Pro…"}
+            ),
+            "prix_achat": forms.NumberInput(
+                attrs={"step": "0.01", "placeholder": "0.00"}
+            ),
             "date_fin_garantie": forms.DateInput(attrs={"type": "date"}),
         }
 
@@ -103,25 +117,28 @@ class AppareilForm(BootstrapModelForm):
 class ModificationAppareilForm(BootstrapModelForm):
     class Meta:
         model = Appareil
-        fields = ['etat']
-        labels = {'etat': 'Etat'}
+        fields = ["etat"]
+        labels = {"etat": "Etat"}
 
 
 class HistoriqueMaintenanceForm(BootstrapModelForm):
     class Meta:
         model = HistoriqueMaintenance
-        fields = ["date_intervention", "description", "technicien", "statut", "cout"]
+        fields = ["description", "technicien", "cout"]
         labels = {
             "date_intervention": "Date d'intervention",
             "description": "Description du problème ou de la maintenance",
             "technicien": "Technicien",
             "statut": "Statut",
-            "cout": "Coût (€, optionnel)",
+            "cout": "Coût (FCFA, optionnel)",
         }
         widgets = {
             "date_intervention": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(
-                attrs={"rows": 4, "placeholder": "Expliquez pourquoi l'appareil nécessite une maintenance."}
+                attrs={
+                    "rows": 4,
+                    "placeholder": "Expliquez pourquoi l'appareil nécessite une maintenance.",
+                }
             ),
             "cout": forms.NumberInput(attrs={"step": "0.01", "placeholder": "0.00"}),
         }
@@ -134,15 +151,27 @@ class HistoriqueMaintenanceForm(BootstrapModelForm):
         # disparaître silencieusement du formulaire d'édition).
         queryset = Technicien.objects.filter(actif=True)
         if self.instance and self.instance.technicien_id:
-            queryset = queryset | Technicien.objects.filter(pk=self.instance.technicien_id)
-        self.fields["technicien"].queryset = queryset.distinct().order_by("nom", "prenom")
+            queryset = queryset | Technicien.objects.filter(
+                pk=self.instance.technicien_id
+            )
+        self.fields["technicien"].queryset = queryset.distinct().order_by(
+            "nom", "prenom"
+        )
         self.fields["technicien"].empty_label = "— Sélectionner un technicien —"
 
 
 class TechnicienForm(BootstrapModelForm):
     class Meta:
         model = Technicien
-        fields = ["nom", "prenom", "email", "telephone", "specialite", "actif", "compte_utilisateur"]
+        fields = [
+            "nom",
+            "prenom",
+            "email",
+            "telephone",
+            "specialite",
+            "actif",
+            "compte_utilisateur",
+        ]
         labels = {
             "nom": "Nom",
             "prenom": "Prénom",
@@ -155,7 +184,9 @@ class TechnicienForm(BootstrapModelForm):
         widgets = {
             "nom": forms.TextInput(attrs={"placeholder": "Nom de famille"}),
             "prenom": forms.TextInput(attrs={"placeholder": "Prénom"}),
-            "specialite": forms.TextInput(attrs={"placeholder": "Ex. Hardware, Réseau, Logiciel…"}),
+            "specialite": forms.TextInput(
+                attrs={"placeholder": "Ex. Hardware, Réseau, Logiciel…"}
+            ),
         }
 
     # --- Création optionnelle d'un compte de connexion (champs hors modèle) ---
@@ -171,7 +202,9 @@ class TechnicienForm(BootstrapModelForm):
         required=False,
         max_length=150,
         label="Identifiant de connexion",
-        widget=forms.TextInput(attrs={"placeholder": "Ex. m.durand", "autocomplete": "off"}),
+        widget=forms.TextInput(
+            attrs={"placeholder": "Ex. m.durand", "autocomplete": "off"}
+        ),
     )
     mot_de_passe = forms.CharField(
         required=False,
@@ -191,7 +224,7 @@ class TechnicienForm(BootstrapModelForm):
         self.fields["compte_utilisateur"].empty_label = "— Aucun compte associé —"
         self.fields["compte_utilisateur"].help_text = (
             "Optionnel : permet à ce technicien de voir ses propres "
-            "interventions une fois connecté (\"Mes interventions\")."
+            'interventions une fois connecté ("Mes interventions").'
         )
 
         if self.instance.pk and self.instance.compte_utilisateur_id:
@@ -201,9 +234,9 @@ class TechnicienForm(BootstrapModelForm):
         else:
             # Le JS (main.js) masque identifiant/mot de passe tant que la case
             # n'est pas cochée ; sans JS, les champs restent simplement visibles.
-            self.fields["creer_compte"].widget.attrs["data-pi-toggle-fields"] = (
-                "id_identifiant,id_mot_de_passe"
-            )
+            self.fields["creer_compte"].widget.attrs[
+                "data-pi-toggle-fields"
+            ] = "id_identifiant,id_mot_de_passe"
 
     def clean(self):
         cleaned = super().clean()
@@ -258,7 +291,9 @@ class TechnicienForm(BootstrapModelForm):
             return super().save(commit=commit)
 
         if not commit:
-            raise ValueError("Créer un compte exige commit=True (compte et fiche sont enregistrés ensemble).")
+            raise ValueError(
+                "Créer un compte exige commit=True (compte et fiche sont enregistrés ensemble)."
+            )
 
         User = get_user_model()
         # Atomique : si l'enregistrement de la fiche échoue, aucun compte orphelin.
@@ -307,7 +342,9 @@ class UtilisateurForm(BootstrapModelForm):
         widgets = {
             "nom": forms.TextInput(attrs={"placeholder": "Nom de famille"}),
             "prenom": forms.TextInput(attrs={"placeholder": "Prénom"}),
-            "poste": forms.TextInput(attrs={"placeholder": "Ex. Comptable, Chef de projet…"}),
+            "poste": forms.TextInput(
+                attrs={"placeholder": "Ex. Comptable, Chef de projet…"}
+            ),
         }
 
 
@@ -321,7 +358,9 @@ class LocalForm(BootstrapModelForm):
             "etage": "Étage",
         }
         widgets = {
-            "nom": forms.TextInput(attrs={"placeholder": "Ex. Salle serveur, Bureau 204…"}),
+            "nom": forms.TextInput(
+                attrs={"placeholder": "Ex. Salle serveur, Bureau 204…"}
+            ),
             "batiment": forms.TextInput(attrs={"placeholder": "Ex. Bâtiment A"}),
             "etage": forms.TextInput(attrs={"placeholder": "Ex. RDC, 2e étage…"}),
         }

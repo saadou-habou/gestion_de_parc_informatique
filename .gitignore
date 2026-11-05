@@ -25,6 +25,7 @@ media/
 # OS
 .DS_Store
 Thumbs.db
+.devdbrc
 
 
 /parc_informatique/.flake8

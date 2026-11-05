@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from parc_informatique.models import (
@@ -43,9 +44,44 @@ class AppareilSerializer(serializers.ModelSerializer):
             "garantie_expiree", "localisation", "localisation_nom",
             "utilisateur", "utilisateur_nom",
         ]
+        # Les écritures d'affectation et d'état sont redirigées vers les services
+        # métier afin de conserver l'historique et les invariants.
 
     def get_utilisateur_nom(self, obj):
         return str(obj.utilisateur) if obj.utilisateur_id else None
+
+    def validate_etat(self, value):
+        if value == "En réparation" and (
+            self.instance is None or self.instance.etat != "En réparation"
+        ):
+            raise serializers.ValidationError(
+                "Utilisez la création d'une maintenance pour passer un appareil en réparation."
+            )
+        return value
+
+    @transaction.atomic
+    def create(self, validated_data):
+        utilisateur = validated_data.pop("utilisateur", None)
+        appareil = super().create(validated_data)
+        if utilisateur is not None:
+            from parc_informatique.services.assignments import changer_affectation
+
+            appareil, _ = changer_affectation(appareil_id=appareil.pk, utilisateur=utilisateur)
+        return appareil
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        nouvel_etat = validated_data.pop("etat", None)
+        utilisateur = validated_data.pop("utilisateur", serializers.empty)
+        if nouvel_etat is not None:
+            from parc_informatique.services.maintenance import changer_etat_appareil
+
+            instance = changer_etat_appareil(appareil_id=instance.pk, nouvel_etat=nouvel_etat)
+        if utilisateur is not serializers.empty:
+            from parc_informatique.services.assignments import changer_affectation
+
+            instance, _ = changer_affectation(appareil_id=instance.pk, utilisateur=utilisateur)
+        return super().update(instance, validated_data)
 
 
 class HistoriqueMaintenanceSerializer(serializers.ModelSerializer):
@@ -60,20 +96,28 @@ class HistoriqueMaintenanceSerializer(serializers.ModelSerializer):
         ]
         # La date d'intervention est fixée côté serveur à la création (comme sur
         # le site) ; date_reparation n'est renseignée que par l'action "terminer".
-        read_only_fields = ["date_intervention", "date_reparation"]
+        read_only_fields = ["date_intervention", "date_reparation", "statut"]
+
+    def get_fields(self):
+        fields = super().get_fields()
+        # L'appareil est fourni à la création, mais une intervention existante
+        # ne peut pas être déplacée vers un autre appareil par PATCH/PUT.
+        if self.instance is not None:
+            fields["appareil"].read_only = True
+        return fields
 
     def get_technicien_nom(self, obj):
         return str(obj.technicien) if obj.technicien_id else None
 
     def create(self, validated_data):
-        from django.utils.timezone import now
-        validated_data["date_intervention"] = now().date()
-        maintenance = super().create(validated_data)
-        # Même règle métier que envoyer_en_maintenance() côté site.
-        appareil = maintenance.appareil
-        appareil.etat = "En réparation"
-        appareil.save(update_fields=["etat"])
-        return maintenance
+        from parc_informatique.services.maintenance import ouvrir_maintenance
+
+        return ouvrir_maintenance(
+            appareil_id=validated_data["appareil"].pk,
+            description=validated_data["description"],
+            technicien=validated_data.get("technicien"),
+            cout=validated_data.get("cout"),
+        )
 
 
 class HistoriqueAffectationSerializer(serializers.ModelSerializer):

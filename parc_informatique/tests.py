@@ -491,3 +491,113 @@ class ApiPermissionsParRoleTests(TestCase):
         from rest_framework.test import APIClient
 
         self.assertEqual(APIClient().get("/api/v1/appareils/").status_code, 401)
+
+
+class ServicesMetierTests(TestCase):
+    """Les transitions métier doivent rester identiques quel que soit le point d'entrée."""
+
+    def test_ouverture_maintenance_force_le_statut_ouvert_et_synchronise_appareil(self):
+        from parc_informatique.services.maintenance import ouvrir_maintenance
+
+        appareil = creer_appareil()
+        maintenance = ouvrir_maintenance(
+            appareil_id=appareil.pk,
+            description="Écran défectueux",
+        )
+        appareil.refresh_from_db()
+        self.assertEqual(maintenance.statut, "Non réparé")
+        self.assertEqual(appareil.etat, "En réparation")
+
+    def test_cloture_maintenance_ne_libere_pas_appareil_si_une_autre_reste_ouverte(self):
+        from parc_informatique.services.maintenance import terminer_maintenance
+
+        appareil = creer_appareil(etat="En réparation")
+        premiere = HistoriqueMaintenance.objects.create(
+            appareil=appareil, date_intervention=now().date(),
+            description="Panne 1", statut="Non réparé",
+        )
+        HistoriqueMaintenance.objects.create(
+            appareil=appareil, date_intervention=now().date(),
+            description="Panne 2", statut="Non réparé",
+        )
+        terminer_maintenance(maintenance_id=premiere.pk)
+        appareil.refresh_from_db()
+        self.assertEqual(appareil.etat, "En réparation")
+
+    def test_affectation_identique_ne_cree_pas_de_doublon(self):
+        from parc_informatique.models import HistoriqueAffectation, Utilisateur
+        from parc_informatique.services.assignments import changer_affectation
+
+        appareil = creer_appareil()
+        utilisateur = Utilisateur.objects.create(
+            nom="Test", prenom="User", email="test-affectation@example.test"
+        )
+        changer_affectation(appareil_id=appareil.pk, utilisateur=utilisateur)
+        _, modifie = changer_affectation(appareil_id=appareil.pk, utilisateur=utilisateur)
+        self.assertFalse(modifie)
+        self.assertEqual(HistoriqueAffectation.objects.filter(appareil=appareil).count(), 1)
+
+    def test_export_csv_neutralise_les_formules(self):
+        from parc_informatique.views import _csv_safe
+
+        self.assertEqual(_csv_safe("=HYPERLINK(1)"), "'=HYPERLINK(1)")
+        self.assertEqual(_csv_safe("Nom normal"), "Nom normal")
+
+
+class ApiServicesMetierTests(TestCase):
+    def _client(self, role):
+        from rest_framework.test import APIClient
+
+        user = creer_utilisateur_avec_role(f"api_services_{role.lower()}", role)
+        client = APIClient()
+        client.force_authenticate(user)
+        return client
+
+    def test_affectation_api_passe_par_le_service_et_cree_un_historique(self):
+        from parc_informatique.models import HistoriqueAffectation, Utilisateur
+
+        appareil = creer_appareil()
+        utilisateur = Utilisateur.objects.create(
+            nom="Diallo", prenom="Aminata", email="aminata@example.test"
+        )
+        response = self._client(GESTIONNAIRE).post(
+            f"/api/v1/appareils/{appareil.pk}/affecter/",
+            {"utilisateur": utilisateur.pk},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        appareil.refresh_from_db()
+        self.assertEqual(appareil.utilisateur_id, utilisateur.pk)
+        self.assertEqual(HistoriqueAffectation.objects.filter(appareil=appareil).count(), 1)
+
+    def test_technicien_ne_peut_pas_modifier_une_maintenance_existante_via_api(self):
+        appareil = creer_appareil(etat="En réparation")
+        maintenance = HistoriqueMaintenance.objects.create(
+            appareil=appareil, date_intervention=now().date(),
+            description="Intervention", statut="Non réparé",
+        )
+        response = self._client(TECHNICIEN).patch(
+            f"/api/v1/maintenances/{maintenance.pk}/",
+            {"statut": "Réparé"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+        maintenance.refresh_from_db()
+        self.assertEqual(maintenance.statut, "Non réparé")
+
+
+class EtatOperationnelTests(TestCase):
+    def test_sortie_de_maintenance_cloture_les_interventions_et_date_reparation(self):
+        from parc_informatique.services.maintenance import changer_etat_appareil
+
+        appareil = creer_appareil(etat="En réparation")
+        maintenance = HistoriqueMaintenance.objects.create(
+            appareil=appareil, date_intervention=now().date(),
+            description="Intervention à clôturer", statut="Non réparé",
+        )
+        changer_etat_appareil(appareil_id=appareil.pk, nouvel_etat="Obsolète")
+        appareil.refresh_from_db()
+        maintenance.refresh_from_db()
+        self.assertEqual(appareil.etat, "Obsolète")
+        self.assertEqual(maintenance.statut, "Réparé")
+        self.assertIsNotNone(maintenance.date_reparation)

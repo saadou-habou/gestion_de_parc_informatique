@@ -79,7 +79,7 @@ class Appareil(models.Model):
         null=True, blank=True, help_text="Utilisée pour l'alerte 'garantie bientôt expirée'."
     )
     localisation = models.ForeignKey(
-        Local, on_delete=models.SET_NULL, null=True, related_name="appareils"
+        Local, on_delete=models.SET_NULL, null=True, blank=True, related_name="appareils"
     )
     utilisateur = models.ForeignKey(
         Utilisateur,
@@ -119,7 +119,7 @@ class HistoriqueMaintenance(models.Model):
         blank=True,
         related_name="maintenances",
     )
-    statut = models.CharField(max_length=50, choices=STATUT_CHOICES, default="Réparé")
+    statut = models.CharField(max_length=50, choices=STATUT_CHOICES, default="Non réparé")
     cout = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         help_text="Coût de l'intervention (pièces + main d'œuvre), pour les statistiques.",

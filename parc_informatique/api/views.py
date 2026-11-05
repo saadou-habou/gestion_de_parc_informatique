@@ -1,9 +1,8 @@
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django.utils.timezone import now
 
 from parc_informatique.models import (
     Appareil,
@@ -13,7 +12,9 @@ from parc_informatique.models import (
     Technicien,
     Utilisateur,
 )
-from parc_informatique.roles import roles_de
+from parc_informatique.roles import ADMIN, GESTIONNAIRE, TECHNICIEN, a_un_role_parmi, roles_de
+from parc_informatique.services.assignments import changer_affectation
+from parc_informatique.services.maintenance import terminer_maintenance
 
 from .permissions import EstAuthentifieAvecRole, EstGestionnaireOuLectureSeule
 from .serializers import (
@@ -44,6 +45,14 @@ class TechnicienViewSet(viewsets.ModelViewSet):
     permission_classes = [EstGestionnaireOuLectureSeule]
 
 
+
+
+class AffectationInputSerializer(serializers.Serializer):
+    utilisateur = serializers.PrimaryKeyRelatedField(
+        queryset=Utilisateur.objects.all(), allow_null=True, required=True
+    )
+
+
 class AppareilViewSet(viewsets.ModelViewSet):
     queryset = Appareil.objects.all().order_by("nom")
     serializer_class = AppareilSerializer
@@ -55,6 +64,23 @@ class AppareilViewSet(viewsets.ModelViewSet):
         if etat:
             queryset = queryset.filter(etat=etat)
         return queryset
+
+    def get_permissions(self):
+        if self.action == "affecter":
+            return [EstGestionnaireOuLectureSeule()]
+        return super().get_permissions()
+
+    @action(detail=True, methods=["post"], url_path="affecter")
+    def affecter(self, request, pk=None):
+        """POST /api/v1/appareils/{id}/affecter/ avec utilisateur=<id|null>."""
+        appareil = self.get_object()
+        serializer = AffectationInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        appareil, _ = changer_affectation(
+            appareil_id=appareil.pk,
+            utilisateur=serializer.validated_data["utilisateur"],
+        )
+        return Response(AppareilSerializer(appareil, context=self.get_serializer_context()).data)
 
 
 class HistoriqueMaintenanceViewSet(viewsets.ModelViewSet):
@@ -70,7 +96,9 @@ class HistoriqueMaintenanceViewSet(viewsets.ModelViewSet):
     serializer_class = HistoriqueMaintenanceSerializer
 
     def get_permissions(self):
-        if self.action == "destroy":
+        # Les techniciens peuvent déclarer une intervention et la clôturer,
+        # mais ne peuvent pas réécrire arbitrairement un historique existant.
+        if self.action in {"destroy", "update", "partial_update"}:
             return [EstGestionnaireOuLectureSeule()]
         return [EstAuthentifieAvecRole()]
 
@@ -90,17 +118,14 @@ class HistoriqueMaintenanceViewSet(viewsets.ModelViewSet):
         maintenance ouverte.
         """
         maintenance = self.get_object()
-        maintenance.statut = "Réparé"
-        maintenance.date_reparation = now().date()
-        maintenance.save(update_fields=["statut", "date_reparation"])
-
-        appareil = maintenance.appareil
-        maintenances_ouvertes = HistoriqueMaintenance.objects.filter(
-            appareil=appareil, statut="Non réparé"
-        ).exclude(pk=maintenance.pk)
-        if appareil.etat == "En réparation" and not maintenances_ouvertes.exists():
-            appareil.etat = "Disponible"
-            appareil.save(update_fields=["etat"])
+        if (
+            a_un_role_parmi(request.user, TECHNICIEN)
+            and not a_un_role_parmi(request.user, ADMIN, GESTIONNAIRE)
+            and (not maintenance.technicien_id or maintenance.technicien.compte_utilisateur_id != request.user.pk)
+        ):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Vous ne pouvez clôturer que vos propres interventions.")
+        maintenance = terminer_maintenance(maintenance_id=maintenance.pk)
 
         return Response(self.get_serializer(maintenance).data)
 

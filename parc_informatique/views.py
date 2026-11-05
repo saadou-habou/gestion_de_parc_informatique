@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -36,6 +37,12 @@ from parc_informatique.models import (
 )
 from parc_informatique.notifications import generer_notifications
 from parc_informatique.roles import ADMIN, GESTIONNAIRE, TECHNICIEN
+from parc_informatique.services.assignments import changer_affectation
+from parc_informatique.services.maintenance import (
+    changer_etat_appareil,
+    ouvrir_maintenance,
+    terminer_maintenance as terminer_maintenance_service,
+)
 
 
 PARC_INFORMATIQUE_INDEX = "parc_informatique:index"
@@ -79,9 +86,10 @@ def index(request):
 
 
 def afficher_appareil(request, appareil_id):
+    appareil = get_object_or_404(Appareil, pk=appareil_id)
     context = {
-        "appareil": get_object_or_404(Appareil, pk=appareil_id),
-        "local": Appareil.localisation,
+        "appareil": appareil,
+        "local": appareil.localisation,
     }
     return render(request, "parc_informatique/afficher_appareil.html", context)
 
@@ -92,16 +100,16 @@ def ajouter_appareil(request):
         form = AppareilForm(request.POST)
 
         if form.is_valid():
-            appareil = form.save()
-            journaliser(request, "creation", appareil)
-            # Si l'appareil est créé avec un utilisateur déjà renseigné,
-            # on ouvre la toute première ligne d'historique d'affectation.
-            if appareil.utilisateur:
-                HistoriqueAffectation.objects.create(
-                    appareil=appareil,
-                    utilisateur=appareil.utilisateur,
-                    date_debut=appareil.date_acquisition or now().date(),
-                )
+            with transaction.atomic():
+                appareil = form.save()
+                # L'équipement et sa première affectation sont enregistrés ensemble.
+                if appareil.utilisateur:
+                    HistoriqueAffectation.objects.create(
+                        appareil=appareil,
+                        utilisateur=appareil.utilisateur,
+                        date_debut=appareil.date_acquisition or now().date(),
+                    )
+                journaliser(request, "creation", appareil)
             return redirect(PARC_INFORMATIQUE_INDEX)
     else:
         form = AppareilForm()
@@ -133,17 +141,10 @@ def modifier_appareil(request, appareil_id):
                 )
                 return redirect("parc_informatique:envoyer_en_maintenance", appareil_id=appareil.id)
 
-            form.save()
+            appareil = changer_etat_appareil(
+                appareil_id=appareil.pk, nouvel_etat=nouvel_etat
+            )
             journaliser(request, "modification", appareil, details=f"état → {nouvel_etat}")
-
-            if ancien_etat == "En réparation" and nouvel_etat != "En réparation":
-                # Symétriquement, si l'appareil sort de l'état "En réparation"
-                # via ce formulaire, on clôture les interventions encore
-                # ouvertes pour que l'historique de maintenance reste cohérent
-                # avec l'état affiché sur la fiche appareil.
-                HistoriqueMaintenance.objects.filter(
-                    appareil=appareil, statut="Non réparé"
-                ).update(statut="Réparé")
 
             return redirect(PARC_INFORMATIQUE_INDEX)
     else:
@@ -179,12 +180,13 @@ def envoyer_en_maintenance(request, appareil_id):
     if request.method == "POST":
         form = HistoriqueMaintenanceForm(request.POST)
         if form.is_valid():
-            maintenance = form.save(commit=False)
-            maintenance.appareil = appareil
-            maintenance.date_intervention = now().date()
-            appareil.etat = "En réparation"
-            appareil.save()
-            maintenance.save()
+            maintenance = ouvrir_maintenance(
+                appareil_id=appareil.pk,
+                description=form.cleaned_data["description"],
+                technicien=form.cleaned_data.get("technicien"),
+                cout=form.cleaned_data.get("cout"),
+                date_intervention=now().date(),
+            )
             journaliser(request, "action", appareil, details=f"Envoyé en maintenance (intervention #{maintenance.id})")
             return redirect("parc_informatique:afficher_appareil", appareil_id=appareil.id)
     else:
@@ -235,26 +237,14 @@ def affecter_appareil(request, appareil_id):
         form = AffectationForm(request.POST, instance=appareil)
         if form.is_valid():
             nouvel_utilisateur = form.cleaned_data["utilisateur"]
-            aujourdhui = now().date()
-
-            # Clôture l'affectation en cours (s'il y en a une) à la date du jour.
-            HistoriqueAffectation.objects.filter(
-                appareil=appareil, date_fin__isnull=True
-            ).update(date_fin=aujourdhui)
-
-            # Ouvre une nouvelle ligne d'historique si un utilisateur est choisi.
-            if nouvel_utilisateur:
-                HistoriqueAffectation.objects.create(
-                    appareil=appareil,
-                    utilisateur=nouvel_utilisateur,
-                    date_debut=aujourdhui,
-                )
-
-            form.save()  # met à jour appareil.utilisateur
-            journaliser(
-                request, "action", appareil,
-                details=f"Affecté à {nouvel_utilisateur}" if nouvel_utilisateur else "Retiré à son utilisateur",
+            appareil, changement_effectue = changer_affectation(
+                appareil_id=appareil.pk, utilisateur=nouvel_utilisateur
             )
+            if changement_effectue:
+                journaliser(
+                    request, "action", appareil,
+                    details=f"Affecté à {nouvel_utilisateur}" if nouvel_utilisateur else "Retiré à son utilisateur",
+                )
             return redirect("parc_informatique:afficher_appareil", appareil_id=appareil.id)
     else:
         form = AffectationForm(instance=appareil)
@@ -310,18 +300,16 @@ def terminer_maintenance(request, maintenance_id):
     maintenance = get_object_or_404(HistoriqueMaintenance, pk=maintenance_id)
 
     if request.method == "POST":
-        maintenance.statut = "Réparé"
-        maintenance.date_reparation = now().date()
-        maintenance.save()
+        if (
+            TECHNICIEN in request.user.groups.values_list("name", flat=True)
+            and not request.user.is_superuser
+            and not request.user.groups.filter(name__in=[ADMIN, GESTIONNAIRE]).exists()
+            and (not maintenance.technicien_id or maintenance.technicien.compte_utilisateur_id != request.user.pk)
+        ):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Vous ne pouvez clôturer que vos propres interventions.")
+        maintenance = terminer_maintenance_service(maintenance_id=maintenance.pk)
         journaliser(request, "action", maintenance.appareil, details=f"Maintenance #{maintenance.id} terminée")
-
-        appareil = maintenance.appareil
-        maintenances_ouvertes = HistoriqueMaintenance.objects.filter(
-            appareil=appareil, statut="Non réparé"
-        ).exclude(pk=maintenance.pk)
-        if appareil.etat == "En réparation" and not maintenances_ouvertes.exists():
-            appareil.etat = "Disponible"
-            appareil.save()
 
     next_url = request.POST.get("next") or request.GET.get("next")
     if next_url and url_has_allowed_host_and_scheme(
@@ -647,6 +635,16 @@ def mes_interventions(request):
 # ---------------------------------------------------------------------------
 
 @role_required(ADMIN, GESTIONNAIRE)
+def _csv_safe(value):
+    """Neutralise les formules exécutables lors de l'ouverture d'un CSV dans un tableur."""
+    if value is None:
+        return ""
+    text_value = str(value)
+    if text_value.lstrip(" \\t\\r\\n").startswith(("=", "+", "-", "@")):
+        return "'" + text_value
+    return text_value
+
+
 def export_appareils_csv(request):
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="appareils.csv"'
@@ -660,9 +658,11 @@ def export_appareils_csv(request):
     ])
     for a in Appareil.objects.select_related("localisation", "utilisateur").order_by("nom"):
         writer.writerow([
-            a.nom, a.type, a.marque, a.modele, a.numero_serie, a.etat,
-            a.date_acquisition or "", a.fournisseur, a.prix_achat or "",
-            a.date_fin_garantie or "", a.localisation or "", a.utilisateur or "",
+            *[_csv_safe(value) for value in (
+                a.nom, a.type, a.marque, a.modele, a.numero_serie, a.etat,
+                a.date_acquisition, a.fournisseur, a.prix_achat,
+                a.date_fin_garantie, a.localisation, a.utilisateur,
+            )],
         ])
     journaliser(request, "action", Appareil, details="Export CSV de l'inventaire")
     return response
@@ -681,8 +681,10 @@ def export_maintenances_csv(request):
     ])
     for m in HistoriqueMaintenance.objects.select_related("appareil", "technicien").order_by("-date_intervention"):
         writer.writerow([
-            m.appareil.nom, m.date_intervention, m.date_reparation or "",
-            m.technicien or "", m.statut, m.cout or "", m.description,
+            *[_csv_safe(value) for value in (
+                m.appareil.nom, m.date_intervention, m.date_reparation,
+                m.technicien, m.statut, m.cout, m.description,
+            )],
         ])
     journaliser(request, "action", HistoriqueMaintenance, details="Export CSV des maintenances")
     return response
@@ -708,65 +710,110 @@ def importer_appareils(request):
 
 
 def _traiter_import_csv(request, fichier):
-    crees, erreurs = 0, []
+    """Import CSV borné, validé et atomique par ligne ; les erreurs internes ne sont jamais exposées."""
+    from decimal import Decimal, InvalidOperation
+
+    from django.core.exceptions import ValidationError
+    from django.db import IntegrityError, transaction
+    from django.utils.dateparse import parse_date
+
+    erreurs = []
+    crees = 0
+    taille = getattr(fichier, "size", None)
+    if taille is not None and taille > 5 * 1024 * 1024:
+        return {"crees": 0, "erreurs": ["Fichier trop volumineux (maximum : 5 Mo)."]}
+
     try:
-        contenu = fichier.read().decode("utf-8-sig")
-    except UnicodeDecodeError:
+        try:
+            donnees = fichier.read(5 * 1024 * 1024 + 1)
+        except TypeError:  # compatibilité avec les objets fichier simples utilisés dans les tests
+            donnees = fichier.read()
+        contenu = donnees.decode("utf-8-sig")
+    except (UnicodeDecodeError, AttributeError):
         return {"crees": 0, "erreurs": ["Fichier illisible : encodage attendu UTF-8."]}
+    if len(contenu.encode("utf-8")) > 5 * 1024 * 1024:
+        return {"crees": 0, "erreurs": ["Fichier trop volumineux (maximum : 5 Mo)."]}
 
     lecteur = csv.DictReader(io.StringIO(contenu))
-    for i, ligne in enumerate(lecteur, start=2):  # ligne 1 = en-têtes
+    colonnes_requises = {"nom", "type", "numero_serie"}
+    if not lecteur.fieldnames or not colonnes_requises.issubset(set(lecteur.fieldnames)):
+        return {"crees": 0, "erreurs": ["En-têtes invalides : nom, type et numero_serie sont obligatoires."]}
+
+    for i, ligne in enumerate(lecteur, start=2):
+        if i > 1001:
+            erreurs.append("Import interrompu : maximum 1 000 lignes par fichier.")
+            break
+
         nom = (ligne.get("nom") or "").strip()
         type_ = (ligne.get("type") or "").strip()
         numero_serie = (ligne.get("numero_serie") or "").strip()
-
         if not (nom and type_ and numero_serie):
             erreurs.append(f"Ligne {i} : nom, type et numero_serie sont obligatoires.")
+            continue
+        if type_ not in dict(Appareil.TYPE_CHOICES):
+            erreurs.append(f"Ligne {i} : type d'appareil invalide.")
             continue
         if Appareil.objects.filter(numero_serie=numero_serie).exists():
             erreurs.append(f"Ligne {i} : numéro de série « {numero_serie} » déjà existant, ignoré.")
             continue
 
-        localisation = None
-        if ligne.get("localisation"):
-            localisation = Local.objects.filter(nom=ligne["localisation"].strip()).first()
-            if not localisation:
-                erreurs.append(f"Ligne {i} : local « {ligne['localisation']} » introuvable, ignoré.")
-
-        utilisateur = None
-        if ligne.get("utilisateur"):
-            utilisateur = Utilisateur.objects.filter(email=ligne["utilisateur"].strip()).first()
-            if not utilisateur:
-                erreurs.append(f"Ligne {i} : utilisateur « {ligne['utilisateur']} » introuvable, ignoré.")
+        etat = (ligne.get("etat") or "Disponible").strip()
+        if etat not in dict(Appareil.ETAT_CHOICES):
+            erreurs.append(f"Ligne {i} : état d'appareil invalide.")
+            continue
 
         try:
-            Appareil.objects.create(
-                nom=nom,
-                type=type_,
-                marque=(ligne.get("marque") or "").strip(),
-                modele=(ligne.get("modele") or "").strip(),
-                numero_serie=numero_serie,
-                etat=(ligne.get("etat") or "Disponible").strip(),
-                date_acquisition=(ligne.get("date_acquisition") or "").strip() or None,
-                fournisseur=(ligne.get("fournisseur") or "").strip(),
-                prix_achat=(ligne.get("prix_achat") or "").strip() or None,
-                date_fin_garantie=(ligne.get("date_fin_garantie") or "").strip() or None,
-                localisation=localisation,
-                utilisateur=utilisateur,
+            acquisition_raw = (ligne.get("date_acquisition") or "").strip()
+            garantie_raw = (ligne.get("date_fin_garantie") or "").strip()
+            acquisition = parse_date(acquisition_raw) if acquisition_raw else None
+            garantie = parse_date(garantie_raw) if garantie_raw else None
+            if acquisition_raw and acquisition is None:
+                raise ValueError("date d'acquisition invalide")
+            if garantie_raw and garantie is None:
+                raise ValueError("date de garantie invalide")
+            prix_raw = (ligne.get("prix_achat") or "").strip()
+            prix = Decimal(prix_raw) if prix_raw else None
+            if prix is not None and prix < 0:
+                raise ValueError("prix négatif")
+
+            localisation = None
+            local_raw = (ligne.get("localisation") or "").strip()
+            if local_raw:
+                localisation = Local.objects.filter(nom=local_raw).first()
+                if not localisation:
+                    raise ValueError("localisation inconnue")
+
+            utilisateur = None
+            email_raw = (ligne.get("utilisateur") or "").strip()
+            if email_raw:
+                utilisateur = Utilisateur.objects.filter(email__iexact=email_raw).first()
+                if not utilisateur:
+                    raise ValueError("utilisateur inconnu")
+
+            appareil = Appareil(
+                nom=nom, type=type_, marque=(ligne.get("marque") or "").strip(),
+                modele=(ligne.get("modele") or "").strip(), numero_serie=numero_serie,
+                etat=etat, date_acquisition=acquisition,
+                fournisseur=(ligne.get("fournisseur") or "").strip(), prix_achat=prix,
+                date_fin_garantie=garantie, localisation=localisation, utilisateur=utilisateur,
             )
+            appareil.full_clean()
+            with transaction.atomic():
+                appareil.save()
+                if utilisateur:
+                    HistoriqueAffectation.objects.create(
+                        appareil=appareil, utilisateur=utilisateur,
+                        date_debut=acquisition or now().date(),
+                    )
             crees += 1
-        except Exception as exc:  # ligne malformée (date invalide, etc.) : on continue les autres
-            erreurs.append(f"Ligne {i} : {exc}")
+        except (ValidationError, ValueError, InvalidOperation, IntegrityError):
+            erreurs.append(f"Ligne {i} : données invalides ou numéro de série déjà utilisé.")
             continue
 
     if crees:
         journaliser(request, "action", Appareil, details=f"Import CSV : {crees} appareil(s) créé(s)")
     return {"crees": crees, "erreurs": erreurs}
 
-
-# ---------------------------------------------------------------------------
-# QR code
-# ---------------------------------------------------------------------------
 
 def qr_code_appareil(request, appareil_id):
     """

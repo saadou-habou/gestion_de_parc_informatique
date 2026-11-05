@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db.models import Exists, OuterRef
 
 from parc_informatique.models import Notification
@@ -32,19 +33,19 @@ def roles_context(request):
 
 def notifications_context(request):
     """
-    Recalcule les notifications (idempotent, voir notifications.py) et
-    expose les plus récentes + le nombre de non-lues à la navbar, sur
-    chaque page. Pour un parc de quelques centaines d'appareils, relancer
-    le calcul à chaque requête reste largement assez rapide ; si ça devient
-    sensible sur un très gros parc, basculez plutôt sur
-    `python manage.py generer_notifications` planifiée en cron et retirez
-    l'appel ci-dessous.
+    Expose les notifications actives à la navbar. La génération, qui écrit
+    en base, est limitée à une exécution toutes les cinq minutes par cache ;
+    en production, privilégier la commande `generer_notifications` planifiée
+    et un cache partagé entre workers.
     """
     user = getattr(request, "user", None)
     if not user or not user.is_authenticated:
         return {}
 
-    generer_notifications()
+    # Le calcul écrit en base : ne pas le relancer à chaque rendu de page.
+    # Le management command `generer_notifications` reste disponible pour cron.
+    if cache.add("parc_informatique:notifications:last_generation", True, timeout=300):
+        generer_notifications()
 
     notifications_actives = (
         Notification.objects.filter(resolue=False)
