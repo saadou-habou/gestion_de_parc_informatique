@@ -21,7 +21,7 @@ jobs:
         python-version: ["3.13"]
 
     env:
-      SECRET_KEY: "ci-only-not-a-production-secret"
+      SECRET_KEY: "@kki^=+)lgq-g$xud$^wzq=fywz@=d1f3($w4*1u33ynhj@try"
       DEBUG: "True"
       ALLOWED_HOSTS: "localhost,127.0.0.1,testserver"
 
